@@ -109,7 +109,7 @@ export const link: LinkType = ({ appearances, disableLabel = false, overrides = 
           admin: {
             width: '50%',
           },
-          label: 'Label',
+          label: { en: 'Label', fa: 'عنوان لینک' },
           required: true,
         },
       ],

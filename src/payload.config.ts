@@ -10,6 +10,7 @@ import {
   UnorderedListFeature,
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
+import { en } from '@payloadcms/translations/languages/en'
 import { fa } from '@payloadcms/translations/languages/fa'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -84,7 +85,7 @@ export default buildConfig({
   globals: [Header, Footer],
   i18n: {
     fallbackLanguage: 'fa',
-    supportedLanguages: { fa },
+    supportedLanguages: { en, fa },
   },
   plugins,
   secret: process.env.PAYLOAD_SECRET || '',

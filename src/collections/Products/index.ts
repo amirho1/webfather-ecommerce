@@ -24,6 +24,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
   ...defaultCollection,
   admin: {
     ...defaultCollection?.admin,
+    group: { en: 'Ecommerce', fa: 'فروشگاه' },
     defaultColumns: ['title', 'enableVariants', '_status', 'variants.variants'],
     livePreview: {
       url: ({ data, req }) =>
@@ -41,6 +42,10 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
       }),
     useAsTitle: 'title',
   },
+  labels: {
+    singular: { en: 'Product', fa: 'محصول' },
+    plural: { en: 'Products', fa: 'محصولات' },
+  },
   defaultPopulate: {
     ...defaultCollection?.defaultPopulate,
     title: true,
@@ -54,7 +59,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     meta: true,
   },
   fields: [
-    { name: 'title', type: 'text', required: true },
+    { name: 'title', type: 'text', label: { en: 'Title', fa: 'عنوان' }, required: true },
     {
       type: 'tabs',
       tabs: [
@@ -138,7 +143,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
               blocks: [CallToAction, Content, MediaBlock],
             },
           ],
-          label: 'Content',
+          label: { en: 'Content', fa: 'محتوا' },
         },
         {
           fields: [
@@ -166,11 +171,11 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
               relationTo: 'products',
             },
           ],
-          label: 'Product Details',
+          label: { en: 'Product Details', fa: 'جزئیات محصول' },
         },
         {
           name: 'meta',
-          label: 'SEO',
+          label: { en: 'SEO', fa: 'سئو' },
           fields: [
             OverviewField({
               titlePath: 'meta.title',
@@ -207,6 +212,15 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
       hasMany: true,
       relationTo: 'categories',
     },
-    slugField(),
+    slugField({
+      overrides: (field) => ({
+        ...field,
+        fields: field.fields.map((subField) =>
+          'name' in subField && subField.name === 'slug'
+            ? { ...subField, label: { en: 'Slug', fa: 'شناسهٔ یکتا' } }
+            : subField,
+        ),
+      }),
+    }),
   ],
 })

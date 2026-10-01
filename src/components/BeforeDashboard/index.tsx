@@ -1,84 +1,70 @@
-import { Banner } from '@payloadcms/ui'
+'use client'
+
+import { Banner, useTranslation } from '@payloadcms/ui'
 import React from 'react'
 
 import { SeedButton } from './SeedButton'
+import { getAdminCopy } from './copy'
 import './index.scss'
 
 const baseClass = 'before-dashboard'
 
 export const BeforeDashboard: React.FC = () => {
+  const { i18n } = useTranslation()
+  const copy = getAdminCopy(i18n.language)
+
   return (
-    <div className={baseClass}>
+    <div className={baseClass} dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}>
       <Banner className={`${baseClass}__banner`} type="success">
-        <h4>Welcome to your dashboard!</h4>
+        <h4>{copy.welcome}</h4>
       </Banner>
-      Here&apos;s what to do next:
+      {copy.nextSteps}
       <ul className={`${baseClass}__instructions`}>
         <li>
           <SeedButton />
-          {' with a few products and pages to jump-start your new project, then '}
+          {copy.seededIntro}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a href="/">visit your website</a>
-          {' to see the results.'}
+          <a href="/">{copy.visitWebsite}</a>
+          {copy.seededOutro}
         </li>
         <li>
-          {'Head over to '}
-          <a
-            href="https://dashboard.stripe.com/test/apikeys"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Stripe to obtain your API Keys
+          {copy.stripeIntro}
+          <a href="https://dashboard.stripe.com/test/apikeys" rel="noopener noreferrer" target="_blank">
+            {copy.stripeLink}
           </a>
-          {
-            '. Create a new account if needed, then copy them into your environment variables and restart your server. See the '
-          }
+          {copy.stripeOutro}
           <a
             href="https://github.com/payloadcms/payload/blob/3.x/templates/ecommerce/README.md#stripe"
             rel="noopener noreferrer"
             target="_blank"
           >
-            README
+            {copy.readme}
           </a>
-          {' for more details.'}
+          {copy.readmeOutro}
         </li>
         <li>
-          {'Modify your '}
-          <a
-            href="https://payloadcms.com/docs/configuration/collections"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            collections
+          {copy.modifyIntro}
+          <a href="https://payloadcms.com/docs/configuration/collections" rel="noopener noreferrer" target="_blank">
+            {copy.collections}
           </a>
-          {' and add more '}
-          <a
-            href="https://payloadcms.com/docs/fields/overview"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            fields
+          {copy.andAdd}
+          <a href="https://payloadcms.com/docs/fields/overview" rel="noopener noreferrer" target="_blank">
+            {copy.fields}
           </a>
-          {' as needed. If you are new to Payload, we also recommend you check out the '}
-          <a
-            href="https://payloadcms.com/docs/getting-started/what-is-payload"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Getting Started
+          {copy.asNeeded}
+          <a href="https://payloadcms.com/docs/getting-started/what-is-payload" rel="noopener noreferrer" target="_blank">
+            {copy.gettingStarted}
           </a>
-          {' docs.'}
+          {copy.docs}
         </li>
       </ul>
-      {'Pro Tip: This block is a '}
-      <a
-        href="https://payloadcms.com/docs/admin/components#base-component-overrides"
-        rel="noopener noreferrer"
-        target="_blank"
-      >
-        custom component
+      {copy.proTip}
+      <a href="https://payloadcms.com/docs/admin/components#base-component-overrides" rel="noopener noreferrer" target="_blank">
+        {copy.customComponent}
       </a>
-      , you can remove it at any time by updating your <strong>payload.config</strong>.
+      {copy.removeAnytime}
+      <strong>{copy.config}</strong>
+      {copy.configEnd}
     </div>
   )
 }

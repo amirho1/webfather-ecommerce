@@ -13,16 +13,29 @@ export const Categories: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    group: 'Content',
+    group: { en: 'Content', fa: 'محتوا' },
+  },
+  labels: {
+    singular: { en: 'Category', fa: 'دسته‌بندی' },
+    plural: { en: 'Categories', fa: 'دسته‌بندی‌ها' },
   },
   fields: [
     {
       name: 'title',
       type: 'text',
+      label: { en: 'Title', fa: 'عنوان' },
       required: true,
     },
     slugField({
       position: undefined,
+      overrides: (field) => ({
+        ...field,
+        fields: field.fields.map((subField) =>
+          'name' in subField && subField.name === 'slug'
+            ? { ...subField, label: { en: 'Slug', fa: 'شناسهٔ یکتا' } }
+            : subField,
+        ),
+      }),
     }),
   ],
 }

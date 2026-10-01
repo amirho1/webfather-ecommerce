@@ -1,6 +1,6 @@
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import { seoPlugin } from '@payloadcms/plugin-seo'
-import { Plugin } from 'payload'
+import { Plugin, type CollectionConfig } from 'payload'
 import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 import { ecommercePlugin } from '@payloadcms/plugin-ecommerce'
@@ -15,6 +15,23 @@ import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
 import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
 import { isAdmin } from '@/access/isAdmin'
 import { isDocumentOwner } from '@/access/isDocumentOwner'
+
+const localizeCollection = (
+  collection: CollectionConfig,
+  singular: string,
+  plural: string,
+  faSingular: string,
+  faPlural: string,
+  group: string,
+  faGroup: string,
+): CollectionConfig => ({
+  ...collection,
+  admin: { ...collection.admin, group: { en: group, fa: faGroup } },
+  labels: {
+    singular: { en: singular, fa: faSingular },
+    plural: { en: plural, fa: faPlural },
+  },
+})
 
 const generateTitle: GenerateTitle<Product | Page> = ({ doc }) => {
   return doc?.title ? `${doc.title} | Payload Ecommerce Template` : 'Payload Ecommerce Template'
@@ -42,7 +59,11 @@ export const plugins: Plugin[] = [
         update: isAdmin,
       },
       admin: {
-        group: 'Content',
+        group: { en: 'Content', fa: 'محتوا' },
+      },
+      labels: {
+        singular: { en: 'Form submission', fa: 'ارسال فرم' },
+        plural: { en: 'Form submissions', fa: 'ارسال‌های فرم' },
       },
     },
     formOverrides: {
@@ -53,7 +74,11 @@ export const plugins: Plugin[] = [
         create: isAdmin,
       },
       admin: {
-        group: 'Content',
+        group: { en: 'Content', fa: 'محتوا' },
+      },
+      labels: {
+        singular: { en: 'Form', fa: 'فرم' },
+        plural: { en: 'Forms', fa: 'فرم‌ها' },
       },
       fields: ({ defaultFields }) => {
         return defaultFields.map((field) => {
@@ -89,7 +114,7 @@ export const plugins: Plugin[] = [
     },
     orders: {
       ordersCollectionOverride: ({ defaultCollection }) => ({
-        ...defaultCollection,
+        ...localizeCollection(defaultCollection, 'Order', 'Orders', 'سفارش', 'سفارش‌ها', 'Ecommerce', 'فروشگاه'),
         fields: [
           ...defaultCollection.fields,
           {
@@ -115,6 +140,18 @@ export const plugins: Plugin[] = [
         ],
       }),
     },
+    carts: {
+      cartsCollectionOverride: ({ defaultCollection }) =>
+        localizeCollection(defaultCollection, 'Cart', 'Carts', 'سبد خرید', 'سبدهای خرید', 'Ecommerce', 'فروشگاه'),
+    },
+    transactions: {
+      transactionsCollectionOverride: ({ defaultCollection }) =>
+        localizeCollection(defaultCollection, 'Transaction', 'Transactions', 'تراکنش', 'تراکنش‌ها', 'Ecommerce', 'فروشگاه'),
+    },
+    addresses: {
+      addressesCollectionOverride: ({ defaultCollection }) =>
+        localizeCollection(defaultCollection, 'Address', 'Addresses', 'نشانی', 'نشانی‌ها', 'Ecommerce', 'فروشگاه'),
+    },
     payments: {
       paymentMethods: [
         stripeAdapter({
@@ -126,6 +163,14 @@ export const plugins: Plugin[] = [
     },
     products: {
       productsCollectionOverride: ProductsCollection,
+      variants: {
+        variantsCollectionOverride: ({ defaultCollection }) =>
+          localizeCollection(defaultCollection, 'Variant', 'Variants', 'گونه', 'گونه‌ها', 'Ecommerce', 'فروشگاه'),
+        variantOptionsCollectionOverride: ({ defaultCollection }) =>
+          localizeCollection(defaultCollection, 'Variant option', 'Variant options', 'گزینهٔ گونه', 'گزینه‌های گونه', 'Ecommerce', 'فروشگاه'),
+        variantTypesCollectionOverride: ({ defaultCollection }) =>
+          localizeCollection(defaultCollection, 'Variant type', 'Variant types', 'نوع گونه', 'انواع گونه', 'Ecommerce', 'فروشگاه'),
+      },
     },
   }),
 ]

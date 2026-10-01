@@ -1,13 +1,21 @@
+'use client'
+
+import { useTranslation } from '@payloadcms/ui'
 import React from 'react'
 
+import { getAdminCopy } from '../BeforeDashboard/copy'
+
 export const BeforeLogin: React.FC = () => {
+  const { i18n } = useTranslation()
+  const copy = getAdminCopy(i18n.language)
+
   return (
-    <div>
+    <div dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}>
       <p>
-        <b>Welcome to your dashboard!</b>
-        {' This is where site admins will log in to manage your store. Customers will need to '}
-        <a href={`${process.env.PAYLOAD_PUBLIC_SERVER_URL}/login`}>log in to the site instead</a>
-        {' to access their user account, order history, and more.'}
+        <b>{copy.loginWelcome}</b>
+        {copy.loginDescription}
+        <a href={`${process.env.PAYLOAD_PUBLIC_SERVER_URL}/login`}>{copy.customerLogin}</a>
+        {copy.loginOutro}
       </p>
     </div>
   )

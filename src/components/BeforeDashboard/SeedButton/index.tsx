@@ -1,20 +1,15 @@
 'use client'
 
 import React, { Fragment, useCallback, useState, MouseEvent } from 'react'
-import { toast } from '@payloadcms/ui'
+import { toast, useTranslation } from '@payloadcms/ui'
+
+import { getAdminCopy } from '../copy'
 
 import './index.scss'
 
-const SuccessMessage: React.FC = () => (
-  <div>
-    Database seeded! You can now{' '}
-    <a target="_blank" href="/">
-      visit your website
-    </a>
-  </div>
-)
-
 export const SeedButton: React.FC = () => {
+  const { i18n } = useTranslation()
+  const copy = getAdminCopy(i18n.language)
   const [loading, setLoading] = useState(false)
   const [seeded, setSeeded] = useState(false)
   const [error, setError] = useState<unknown>(null)
@@ -24,15 +19,15 @@ export const SeedButton: React.FC = () => {
       e.preventDefault()
 
       if (seeded) {
-        toast.info('Database already seeded.')
+        toast.info(copy.alreadySeeded)
         return
       }
       if (loading) {
-        toast.info('Seeding already in progress.')
+        toast.info(copy.alreadySeeding)
         return
       }
       if (error) {
-        toast.error(`An error occurred, please refresh and try again.`)
+        toast.error(copy.seedError)
         return
       }
 
@@ -48,7 +43,7 @@ export const SeedButton: React.FC = () => {
                     resolve(true)
                     setSeeded(true)
                   } else {
-                    reject('An error occurred while seeding.')
+                    reject(copy.seedFailed)
                   }
                 })
                 .catch((error) => {
@@ -59,27 +54,34 @@ export const SeedButton: React.FC = () => {
             }
           }),
           {
-            loading: 'Seeding with data....',
-            success: <SuccessMessage />,
-            error: 'An error occurred while seeding.',
+            loading: copy.seedLoading,
+            success: (
+              <div>
+                {copy.seedSuccess}
+                <a target="_blank" href="/">
+                  {copy.visitWebsite}
+                </a>
+              </div>
+            ),
+            error: copy.seedFailed,
           },
         )
       } catch (err) {
         setError(err)
       }
     },
-    [loading, seeded, error],
+    [loading, seeded, error, copy],
   )
 
   let message = ''
-  if (loading) message = ' (seeding...)'
-  if (seeded) message = ' (done!)'
-  if (error) message = ` (error: ${error})`
+  if (loading) message = copy.loadingSuffix
+  if (seeded) message = copy.doneSuffix
+  if (error) message = copy.errorSuffix.replace('{{error}}', String(error))
 
   return (
     <Fragment>
-      <button className="seedButton" onClick={handleClick}>
-        Seed your database
+      <button className="seedButton" dir={i18n.language === 'fa' ? 'rtl' : 'ltr'} onClick={handleClick}>
+        {copy.seedButton}
       </button>
       {message}
     </Fragment>

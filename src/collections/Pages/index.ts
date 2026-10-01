@@ -31,7 +31,7 @@ export const Pages: CollectionConfig = {
     update: adminOnly,
   },
   admin: {
-    group: 'Content',
+    group: { en: 'Content', fa: 'محتوا' },
     defaultColumns: ['title', 'slug', 'updatedAt'],
     livePreview: {
       url: ({ data, req }) =>
@@ -49,10 +49,15 @@ export const Pages: CollectionConfig = {
       }),
     useAsTitle: 'title',
   },
+  labels: {
+    singular: { en: 'Page', fa: 'صفحه' },
+    plural: { en: 'Pages', fa: 'صفحه‌ها' },
+  },
   fields: [
     {
       name: 'title',
       type: 'text',
+      label: { en: 'Title', fa: 'عنوان' },
       required: true,
     },
     {
@@ -80,7 +85,7 @@ export const Pages: CollectionConfig = {
       tabs: [
         {
           fields: [hero],
-          label: 'Hero',
+          label: { en: 'Hero', fa: 'بخش اصلی' },
         },
         {
           fields: [
@@ -100,11 +105,11 @@ export const Pages: CollectionConfig = {
               required: true,
             },
           ],
-          label: 'Content',
+          label: { en: 'Content', fa: 'محتوا' },
         },
         {
           name: 'meta',
-          label: 'SEO',
+          label: { en: 'SEO', fa: 'سئو' },
           fields: [
             OverviewField({
               titlePath: 'meta.title',
@@ -131,7 +136,16 @@ export const Pages: CollectionConfig = {
         },
       ],
     },
-    slugField(),
+    slugField({
+      overrides: (field) => ({
+        ...field,
+        fields: field.fields.map((subField) =>
+          'name' in subField && subField.name === 'slug'
+            ? { ...subField, label: { en: 'Slug', fa: 'شناسهٔ یکتا' } }
+            : subField,
+        ),
+      }),
+    }),
   ],
   hooks: {
     afterChange: [revalidatePage],

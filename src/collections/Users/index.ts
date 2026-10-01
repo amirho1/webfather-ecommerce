@@ -19,9 +19,13 @@ export const Users: CollectionConfig = {
     update: adminOrSelf,
   },
   admin: {
-    group: 'Users',
+    group: { en: 'Users', fa: 'کاربران' },
     defaultColumns: ['name', 'email', 'roles'],
     useAsTitle: 'name',
+  },
+  labels: {
+    singular: { en: 'User', fa: 'کاربر' },
+    plural: { en: 'Users', fa: 'کاربران' },
   },
   auth: {
     tokenExpiration: 1209600,
@@ -30,6 +34,7 @@ export const Users: CollectionConfig = {
     {
       name: 'name',
       type: 'text',
+      label: { en: 'Name', fa: 'نام' },
     },
     {
       name: 'roles',
@@ -46,11 +51,11 @@ export const Users: CollectionConfig = {
       },
       options: [
         {
-          label: 'admin',
+          label: { en: 'Administrator', fa: 'مدیر' },
           value: 'admin',
         },
         {
-          label: 'customer',
+          label: { en: 'Customer', fa: 'مشتری' },
           value: 'customer',
         },
       ],
