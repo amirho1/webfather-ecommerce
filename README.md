@@ -299,10 +299,10 @@ This command will check for any migrations that have not yet been run and try to
 
 ### Docker
 
-The production Docker build reads a snapshot of the persistent SQLite volume
-while generating pages. Use `./scripts/docker-deploy.sh` to prepare the
-snapshot, build the image, and start the service. For Dokploy server setup,
-environment variables, updates, and backups, see [DEPLOYMENT.md](DEPLOYMENT.md).
+The production Docker build migrates an empty temporary SQLite database before
+compiling the application. At startup, the container applies pending migrations
+to the persistent SQLite volume. For Dokploy setup, updates, and backups, see
+[DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Seed
 

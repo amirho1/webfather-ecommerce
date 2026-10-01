@@ -3,13 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      additional_contexts:
-        sqlite_snapshot: ${SQLITE_SNAPSHOT_DIR:-./.docker-build/sqlite-snapshot}
-      secrets:
-        - build_env
       args:
-        NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:?Set NEXT_PUBLIC_SERVER_URL to the public site URL}
-        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:?Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:-http://localhost:4000}
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
     env_file:
       - .env
     environment:
@@ -49,16 +45,11 @@ services:
 
 volumes:
   sqlite_data:
-    external: true
     name: ${SQLITE_VOLUME_NAME:-webfather_sqlite_data}
   media_data:
     name: ${MEDIA_VOLUME_NAME:-webfather_media_data}
 
-secrets:
-  build_env:
-    file: .env
-
 networks:
   proxy:
     name: ${DOCKER_PROXY_NETWORK:-dokploy-network}
-    external: true
+    external: ${DOCKER_PROXY_NETWORK_EXTERNAL:-true}

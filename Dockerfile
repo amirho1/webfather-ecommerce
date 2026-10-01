@@ -17,11 +17,11 @@ ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
 ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 ENV NODE_ENV=production
-RUN --mount=type=bind,from=sqlite_snapshot,source=/webfather-ecommerce.db,target=/run/db-snapshot/webfather-ecommerce.db,readonly \
-  --mount=type=secret,id=build_env,required=true \
-  --mount=type=tmpfs,target=/app/data \
-  cp /run/db-snapshot/webfather-ecommerce.db /app/data/webfather-ecommerce.db \
-  && node scripts/build-with-sqlite.mjs
+RUN --mount=type=tmpfs,target=/tmp \
+  export DATABASE_URL=file:/tmp/build.db PAYLOAD_SECRET=build-only-placeholder \
+  && node node_modules/payload/bin.js migrate \
+  && pnpm build \
+  && rm -f /tmp/build.db /tmp/build.db-wal /tmp/build.db-shm
 
 FROM node:22-bookworm-slim AS runner
 ENV NODE_ENV=production

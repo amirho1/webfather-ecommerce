@@ -1,71 +1,45 @@
-# Deploy on a Dokploy server
+# Deploy with Dokploy
 
-This guide deploys the Payload storefront with Docker Compose on the server
-that runs Dokploy. Dokploy's Traefik handles HTTPS and routing. Run
-`scripts/docker-deploy.sh` over SSH because the Docker build needs a snapshot
-of the persistent SQLite volume. Dokploy's normal Compose **Deploy** button
-does not run that preparation step. This app is managed by Docker Compose on
-the host, so use `docker compose` for deployments and logs rather than the
-Dokploy Compose dashboard. See [Dokploy's Compose guide](https://docs.dokploy.com/docs/core/docker-compose)
-and [manual domain routing](https://docs.dokploy.com/docs/core/docker-compose/domains).
+Deploy this application as a Git-backed **Docker Compose** service in Dokploy.
+The image builds against an empty, temporary SQLite database. At container
+startup, Payload applies pending migrations to the persistent database. No
+server-side build script or database snapshot is needed.
 
-## 1. Prepare the server and domain
+## Set up the Compose service
 
-1. Provision a Linux server with SSH access and [install Dokploy](https://docs.dokploy.com/docs/core/installation).
-   Its standard installation creates `dokploy-network`, uses ports 80 and 443
-   for Traefik, and exposes the Dokploy UI on port 3000. Docker Compose 2.17+
-   is needed for the extra build context.
-2. Point the domain's DNS A record, and AAAA record if used, to the server.
-   Allow inbound TCP 80 and 443. The app listens on container port 4000 and
-   does not publish that port on the host.
-3. SSH to the server with an account that can run Docker. Confirm that
-   `docker compose version` works and `docker network inspect dokploy-network`
-   finds the proxy network. If your proxy uses a different network, set
-   `DOCKER_PROXY_NETWORK` in `.env`.
+1. Create a Compose service in Dokploy, choose **Docker Compose** (not Docker
+   Stack), connect this repository, and set the Compose path to
+   `./docker-compose.yml`. Docker Stack does not support the `build` section.
+2. In the **Environment** tab, set the variables below. Dokploy writes them to
+   `.env` beside the Compose file; this service loads that file with `env_file`.
+3. In the **Domains** tab, add the public hostname and route it to container
+   port **4000**. Enable HTTPS for the domain. Dokploy adds the routing labels
+   for the Compose service.
+4. Click **Deploy**. Enable AutoDeploy or the Git webhook if you want pushes to
+   trigger subsequent deployments. Use the deployment logs and service health
+   status to check the result.
 
-The Dokploy Compose override adds Traefik labels for the domain, HTTPS using
-the `letsencrypt` resolver, and an HTTP-to-HTTPS redirect. `APP_DOMAIN` must
-be a hostname such as `shop.example.com`, without `https://`.
+See Dokploy's [Compose guide](https://docs.dokploy.com/docs/core/docker-compose)
+and [Domains guide](https://docs.dokploy.com/docs/core/docker-compose/domains)
+for the current UI steps.
 
-## 2. Put the project on the server
+## Environment
 
-Clone the repository into a stable directory, for example:
-
-```sh
-git clone <your-repository-url> ~/webfather-ecommerce
-cd ~/webfather-ecommerce
-```
-
-Configure Git access for the server first if the repository is private. Run
-the remaining commands from the repository root.
-
-## 3. Configure `.env`
-
-```sh
-cp .env.example .env
-vi .env
-```
-
-Set these values before the first deployment:
+Set these values in Dokploy before the first deployment:
 
 | Variable | Value |
 | --- | --- |
-| `COMPOSE_FILE` | `docker-compose.yml:docker-compose.dokploy.yml` on the Linux server; adds Traefik routing. |
-| `APP_DOMAIN` | Your hostname only, for example `shop.example.com`. |
-| `PAYLOAD_SECRET` | A long, stable random value. Generate one with `openssl rand -hex 32` and keep it across deployments. |
-| `PREVIEW_SECRET` | A separate random value for draft preview links. |
-| `PAYLOAD_PUBLIC_SERVER_URL` | The public HTTPS URL, for example `https://shop.example.com`. |
-| `NEXT_PUBLIC_SERVER_URL` | The same public HTTPS URL; embedded in the Next.js build. |
-| `STRIPE_SECRET_KEY` | Stripe secret key (`sk_test_...` or `sk_live_...`). |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Matching Stripe publishable key (`pk_test_...` or `pk_live_...`); embedded in the build. |
-| `STRIPE_WEBHOOKS_SIGNING_SECRET` | The `whsec_...` signing secret for the Stripe webhook endpoint. |
+| `PAYLOAD_SECRET` | A long, stable random value; keep it unchanged across deployments. |
+| `PREVIEW_SECRET` | A separate value for draft preview links. |
+| `PAYLOAD_PUBLIC_SERVER_URL` | Public HTTPS URL, such as `https://shop.example.com`. |
+| `NEXT_PUBLIC_SERVER_URL` | The same public HTTPS URL; embedded in the client build. |
+| `STRIPE_SECRET_KEY` | Stripe secret key. |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Matching Stripe publishable key; embedded in the client build. |
+| `STRIPE_WEBHOOKS_SIGNING_SECRET` | Signing secret for the Stripe webhook endpoint. |
 
-For example, the deployment-specific part of `.env` should look like this
-after replacing the domain and secret placeholders:
+For example, replace every placeholder before deploying:
 
 ```dotenv
-COMPOSE_FILE=docker-compose.yml:docker-compose.dokploy.yml
-APP_DOMAIN=shop.example.com
 PAYLOAD_SECRET=replace-with-a-stable-random-value
 PREVIEW_SECRET=replace-with-a-different-random-value
 PAYLOAD_PUBLIC_SERVER_URL=https://shop.example.com
@@ -75,95 +49,56 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_replace-me
 STRIPE_WEBHOOKS_SIGNING_SECRET=whsec_replace-me
 ```
 
-`COMPANY_NAME` and `SITE_NAME` control footer text. The example's
-`DATABASE_URL` is for running outside Docker: Compose sets the container URL
-to `file:/app/data/webfather-ecommerce.db`. Compose also fixes `NODE_ENV` to
-`production` and `PORT` to `4000`.
+Compose sets `DATABASE_URL` inside the container to
+`file:/app/data/webfather-ecommerce.db`. The `DATABASE_URL` in `.env.example`
+is for running the app outside Docker. `COMPANY_NAME`, `SITE_NAME`, and the
+social variables may also be set in Dokploy. Register
+`https://shop.example.com/api/payments/stripe/webhooks` in Stripe with your
+actual domain.
 
-Optional deployment variables are `DOCKER_PROXY_NETWORK` (default
-`dokploy-network`), `SQLITE_VOLUME_NAME` (default `webfather_sqlite_data`),
-and `MEDIA_VOLUME_NAME` (default `webfather_media_data`). Keep volume names
-stable after deployment so future releases find the same data. The script
-sets `SQLITE_SNAPSHOT_DIR` temporarily; remove any
-`SQLITE_SNAPSHOT_DIR=./` line from `.env` if present. The Compose fallback
-path only lets inspection commands parse the configuration; it does not
-prepare a database for a direct build.
+The image build uses a dummy Payload secret and an empty database. It does not
+read production secrets or data. The two `NEXT_PUBLIC_*` build arguments have
+defaults so the Dockerfile can build without them, but production must set the
+real public URL and Stripe key in Dokploy because client code embeds their
+build-time values.
 
-The `.env` file is excluded from Git and the normal Docker build context.
-Docker supplies it to the build as a secret. Dokploy's Environment UI does
-not configure this SSH-managed checkout; edit the server's `.env` file.
+## Volumes and network
 
-If accepting Stripe payments, register
-`https://shop.example.com/api/payments/stripe/webhooks` in Stripe, replacing
-the hostname with yours. Copy that endpoint's signing secret into `.env`.
-This is the [Payload ecommerce Stripe webhook path](https://payloadcms.com/docs/ecommerce/payments).
+SQLite data persists in the named volume `webfather_sqlite_data` at
+`/app/data`; uploads persist in `webfather_media_data` at
+`/app/public/media`. Docker creates either volume on first deployment and
+reuses it on updates. If an existing deployment used different names, set
+`SQLITE_VOLUME_NAME` and `MEDIA_VOLUME_NAME` to those exact names **before**
+deploying. Keep the names and `PAYLOAD_SECRET` stable. Do not remove volumes
+when updating the service, and run only one replica because SQLite has one
+writer.
 
-## 4. Build and start
+The service joins the existing `dokploy-network` by default. If Dokploy uses
+another proxy network, set `DOCKER_PROXY_NETWORK` to its name. For local
+Compose use without Dokploy, set both `DOCKER_PROXY_NETWORK=webfather-local`
+and `DOCKER_PROXY_NETWORK_EXTERNAL=false`; Compose will create that network.
 
-```sh
-./scripts/docker-deploy.sh
-docker compose ps
-docker compose logs --tail=100 payload
-```
+## Updates
 
-The script creates the SQLite volume and file if needed, then takes a
-consistent SQLite snapshot in a temporary host directory. The Docker builder
-receives that snapshot as a read-only extra context, migrates a temporary
-copy, and runs `next build` against it. This lets `generateStaticParams` read
-the database. Only after the image builds does Compose start the new
-container, which runs pending migrations against the persistent volume. The
-script removes the temporary snapshot when it exits.
+Commit a Payload migration for each production schema change, then push the
+commit or click **Deploy** in Dokploy. The image build migrates only its
+temporary database. The container applies new migrations to the persistent
+SQLite volume before starting the server. The home page reads the live
+database, so published content does not depend on what existed at build time.
 
-Neither the database snapshot nor `.env` is copied into the final image.
-SQLite persists in `webfather_sqlite_data` at `/app/data`; uploads persist in
-`webfather_media_data` at `/app/public/media`. Run one replica because SQLite
-has one writer. To build without restarting the service, use
-`./scripts/docker-deploy.sh --build-only`.
+Check the deployment logs if migration fails; the server will not start until
+the migration succeeds. Keep a backup before deploying schema changes.
 
-Once DNS and HTTPS are ready, open your domain and `/admin` to create the
-first Payload admin account. The healthcheck requests `/`; `docker compose
-ps` should report `healthy` after startup.
+## Backups and restore
 
-## 5. Update the application
+Configure [Dokploy Volume Backups](https://docs.dokploy.com/docs/core/volume-backups)
+for **both** named volumes. For the SQLite volume, enable **Turn off
+Container** during backup so the database and its WAL files are captured
+consistently. Back up the media volume as well because database records can
+refer to uploaded files.
 
-From the same checkout on the server:
-
-```sh
-cd ~/webfather-ecommerce
-git pull --ff-only
-./scripts/docker-deploy.sh
-```
-
-Commit a Payload migration for each production schema change. The build
-migrates only its temporary database copy; the live volume is migrated at
-container startup. `generateStaticParams` runs with the snapshot taken for
-each build, so rebuild after adding pages that should be generated at build
-time. A failed build leaves the running container in place. A direct `docker
-compose up --build` or Dokploy UI deploy does not prepare the snapshot.
-
-## 6. Back up and restore
-
-Back up SQLite while the app is running with SQLite's snapshot operation,
-not a plain copy of the live `.db` file. This writes `payload-backup.db` to
-the current host directory:
-
-```sh
-docker compose exec -T payload rm -f /tmp/payload-backup.db
-docker compose exec -T payload node -e "const {DatabaseSync}=require('node:sqlite'); const db=new DatabaseSync('/app/data/webfather-ecommerce.db'); db.exec(\"VACUUM INTO '/tmp/payload-backup.db'\"); db.close()"
-docker compose cp payload:/tmp/payload-backup.db ./payload-backup.db
-```
-
-Back up the `webfather_media_data` volume too; database records can refer to
-uploaded files there. To restore SQLite, preserve a copy of the current
-volume, then stop the app, replace the file, remove old WAL/SHM sidecars,
-and rebuild against the restored data:
-
-```sh
-docker compose stop payload
-docker compose cp ./payload-backup.db payload:/app/data/webfather-ecommerce.db
-docker compose run --rm --no-deps --user root --entrypoint sh payload -c 'rm -f /app/data/webfather-ecommerce.db-wal /app/data/webfather-ecommerce.db-shm && chown 1000:1000 /app/data/webfather-ecommerce.db'
-./scripts/docker-deploy.sh
-```
-
-Keep the SQLite and media volumes when updating or recreating containers.
-Do not remove them during a normal deployment.
+Before restoring, stop the service and preserve the current volumes. Restore
+both backups using their original volume names, then deploy the same or a
+compatible application revision. Dokploy's volume restore requires a target
+volume that is not in use; follow its restore instructions for replacing an
+existing volume.
