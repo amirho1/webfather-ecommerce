@@ -1,0 +1,64 @@
+services:
+  payload:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      additional_contexts:
+        sqlite_snapshot: ${SQLITE_SNAPSHOT_DIR:?Use scripts/docker-deploy.sh to prepare the SQLite snapshot}
+      secrets:
+        - build_env
+      args:
+        NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:?Set NEXT_PUBLIC_SERVER_URL to the public site URL}
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:?Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: file:/app/data/webfather-ecommerce.db
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?Set PAYLOAD_SECRET}
+      PAYLOAD_PUBLIC_SERVER_URL: ${PAYLOAD_PUBLIC_SERVER_URL:?Set PAYLOAD_PUBLIC_SERVER_URL}
+      NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:?Set NEXT_PUBLIC_SERVER_URL}
+      PREVIEW_SECRET: ${PREVIEW_SECRET:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?Set STRIPE_SECRET_KEY}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:?Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+      STRIPE_WEBHOOKS_SIGNING_SECRET: ${STRIPE_WEBHOOKS_SIGNING_SECRET:?Set STRIPE_WEBHOOKS_SIGNING_SECRET}
+    volumes:
+      - sqlite_data:/app/data
+      - media_data:/app/public/media
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    networks:
+      - proxy
+
+volumes:
+  sqlite_data:
+    external: true
+    name: ${SQLITE_VOLUME_NAME:-webfather_sqlite_data}
+  media_data:
+    name: ${MEDIA_VOLUME_NAME:-webfather_media_data}
+
+secrets:
+  build_env:
+    file: .env
+
+networks:
+  proxy:
+    name: ${DOCKER_PROXY_NETWORK:-dokploy-network}
+    external: true

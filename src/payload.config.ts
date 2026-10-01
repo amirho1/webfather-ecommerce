@@ -44,6 +44,8 @@ export default buildConfig({
     client: {
       url: process.env.DATABASE_URL || '',
     },
+    busyTimeout: 5000,
+    wal: true,
   }),
   editor: lexicalEditor({
     features: () => {

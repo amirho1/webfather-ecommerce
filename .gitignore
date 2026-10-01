@@ -43,3 +43,4 @@ public/media
 
 webfather-ecommerce.db
 false
+*.db*
