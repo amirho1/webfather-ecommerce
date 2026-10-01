@@ -10,6 +10,7 @@ import {
   UnorderedListFeature,
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
+import { fa } from '@payloadcms/translations/languages/fa'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -81,6 +82,10 @@ export default buildConfig({
   //email: nodemailerAdapter(),
   endpoints: [],
   globals: [Header, Footer],
+  i18n: {
+    fallbackLanguage: 'fa',
+    supportedLanguages: { fa },
+  },
   plugins,
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
