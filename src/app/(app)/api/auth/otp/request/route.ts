@@ -1,0 +1,52 @@
+import { isIranianMobile, normalizePhone } from '@/lib/auth/mobileSession';
+import { sendOtp } from '@/lib/auth/otp';
+import { checkRateLimit, extractClientIp, recordOtpAttempt } from '@/lib/auth/otpRateLimiter';
+import { clearPendingOtp, generateAndStoreOtp } from '@/lib/auth/otpService';
+import config from '@payload-config';
+import { NextResponse, type NextRequest } from 'next/server';
+import { getPayload } from 'payload';
+
+export const runtime = 'nodejs'
+
+export async function POST(request: NextRequest) {
+  const data = await request.json().catch(() => null)
+  const phone = normalizePhone(typeof data?.phoneNumber === 'string' ? data.phoneNumber : '')
+
+  if (!isIranianMobile(phone)) {
+    return NextResponse.json({ error: 'شماره موبایل معتبر نیست.' }, { status: 400 })
+  }
+
+  // Extract client IP safely (no global shared unknown-IP lock)
+  const clientIp = extractClientIp(request)
+
+  // 1. Fast in-memory rate limit and cooldown check (zero database table bloat from spammers)
+  const rateLimitResult = checkRateLimit(phone, clientIp)
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: rateLimitResult.error || 'درخواست‌های زیادی ثبت شده است.' },
+      { status: rateLimitResult.statusCode || 429 },
+    )
+  }
+
+  const payload = await getPayload({ config })
+
+  // 2. Generate and store OTP in dedicated verification registry (no ghost user creation in DB!)
+  const { code } = generateAndStoreOtp(phone)
+
+  // 3. Record attempt in rate limiter and DB audit log
+  await recordOtpAttempt(payload, phone, clientIp)
+
+  // 4. Dispatch SMS via SMS provider
+  try {
+    await sendOtp(phone, code)
+  } catch (error) {
+    payload.logger.error({ err: error }, 'OTP delivery failed')
+    clearPendingOtp(phone)
+    return NextResponse.json(
+      { error: 'ارسال پیامک ممکن نشد. بعداً دوباره تلاش کنید.' },
+      { status: 503 },
+    )
+  }
+
+  return NextResponse.json({ ok: true })
+}

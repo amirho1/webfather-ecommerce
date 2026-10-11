@@ -57,7 +57,7 @@ export const AccountForm: React.FC = () => {
           setChangePassword(false)
           reset({
             name: json.doc.name,
-            email: json.doc.email,
+            email: json.doc.email ?? '',
             password: '',
             passwordConfirm: '',
           })
@@ -82,7 +82,7 @@ export const AccountForm: React.FC = () => {
     if (user) {
       reset({
         name: user.name,
-        email: user.email,
+        email: user.email ?? '',
         password: '',
         passwordConfirm: '',
       })

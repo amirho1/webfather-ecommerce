@@ -1,38 +1,12 @@
-import type { Metadata } from 'next'
+import { AuthPageWrapper } from '@/components/auth/AuthPageWrapper';
 
-import { RenderParams } from '@/components/RenderParams'
-import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
-import React from 'react'
-import { headers as getHeaders } from 'next/headers'
-import configPromise from '@payload-config'
-import { getPayload } from 'payload'
+export const metadata = { title: 'ساخت حساب | مفت خر' }
 
-import { CreateAccountForm } from '@/components/forms/CreateAccountForm'
-import { redirect } from 'next/navigation'
-
-export default async function CreateAccount() {
-  const headers = await getHeaders()
-  const payload = await getPayload({ config: configPromise })
-  const { user } = await payload.auth({ headers })
-
-  if (user) {
-    redirect(`/account?warning=${encodeURIComponent('You are already logged in.')}`)
-  }
-
+export default function CreateAccountPage() {
   return (
-    <div className="container py-16">
-      <h1 className="text-xl mb-4">Create Account</h1>
-      <RenderParams />
-      <CreateAccountForm />
-    </div>
+    <AuthPageWrapper
+      title="ساخت حساب"
+      subtitle="شماره موبایلت رو وارد کن تا با کد پیامکی حساب بسازیم."
+    />
   )
-}
-
-export const metadata: Metadata = {
-  description: 'Create an account or log in to your existing account.',
-  openGraph: mergeOpenGraph({
-    title: 'Account',
-    url: '/account',
-  }),
-  title: 'Account',
 }

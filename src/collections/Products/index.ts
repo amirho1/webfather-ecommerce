@@ -54,12 +54,20 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     variants: true,
     enableVariants: true,
     gallery: true,
-    priceInUSD: true,
+    priceInTOMAN: true,
+    brandLogo: true,
+    badgeColor: true,
+    shortDescription: true,
+    featured: true,
     inventory: true,
     meta: true,
   },
   fields: [
     { name: 'title', type: 'text', label: { en: 'Title', fa: 'عنوان' }, required: true },
+    { name: 'shortDescription', type: 'textarea', label: { en: 'Short description', fa: 'توضیح کوتاه' } },
+    { name: 'brandLogo', type: 'upload', relationTo: 'media', label: { en: 'Brand logo', fa: 'لوگوی برند' } },
+    { name: 'badgeColor', type: 'text', defaultValue: '#f1f4ff', label: { en: 'Badge color', fa: 'رنگ نشان' }, validate: (value: unknown) => !value || (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value)) || 'Use a six-digit hex color.' },
+    { name: 'featured', type: 'checkbox', defaultValue: false, label: { en: 'Featured', fa: 'محبوب' } },
     {
       type: 'tabs',
       tabs: [
@@ -85,7 +93,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
             {
               name: 'gallery',
               type: 'array',
-              minRows: 1,
+              minRows: 0,
               fields: [
                 {
                   name: 'image',

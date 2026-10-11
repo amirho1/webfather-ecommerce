@@ -1,8 +1,8 @@
 'use client'
 
-import type { User } from '@/payload-types'
+import type { User } from '@/payload-types';
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // eslint-disable-next-line no-unused-vars
 type ResetPassword = (args: {
@@ -23,6 +23,8 @@ type AuthContext = {
   create: Create
   forgotPassword: ForgotPassword
   login: Login
+  requestOtp: (phoneNumber: string) => Promise<void>
+  verifyOtp: (phoneNumber: string, code: string) => Promise<User>
   logout: Logout
   resetPassword: ResetPassword
   setUser: (user: User | null) => void // eslint-disable-line no-unused-vars
@@ -40,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [status, setStatus] = useState<'loggedIn' | 'loggedOut' | undefined>()
   const create = useCallback<Create>(async (args) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/create`, {
+      const res = await fetch('/api/users/create', {
         body: JSON.stringify({
           email: args.email,
           password: args.password,
@@ -68,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback<Login>(async (args) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/login`, {
+      const res = await fetch('/api/users/login', {
         body: JSON.stringify({
           email: args.email,
           password: args.password,
@@ -94,22 +96,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [])
 
+  const requestOtp = useCallback(async (phoneNumber: string) => {
+    const response = await fetch('/api/auth/otp/request', {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneNumber }),
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.error || 'ارسال کد ممکن نشد.')
+    }
+  }, [])
+
+  const verifyOtp = useCallback(async (phoneNumber: string, code: string) => {
+    const response = await fetch('/api/auth/otp/verify', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneNumber, code }),
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(data.error || 'کد معتبر نیست.')
+    }
+    const verifiedUser = data.user as User
+    setUser(verifiedUser)
+    setStatus('loggedIn')
+    return verifiedUser
+  }, [])
+
   const logout = useCallback<Logout>(async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/logout`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      })
+      await Promise.all([
+        fetch('/api/auth/otp/logout', { credentials: 'include', method: 'POST' }),
+        fetch('/api/users/logout', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        }),
+      ])
 
-      if (res.ok) {
-        setUser(null)
-        setStatus('loggedOut')
-      } else {
-        throw new Error('An error occurred while attempting to logout.')
-      }
+      setUser(null)
+      setStatus('loggedOut')
     } catch (e) {
       throw new Error('An error occurred while attempting to logout.')
     }
@@ -118,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/me`, {
+        const res = await fetch('/api/users/me', {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
@@ -135,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (e) {
         setUser(null)
-        throw new Error('An error occurred while fetching your account.')
+        setStatus('loggedOut')
       }
     }
 
@@ -144,7 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const forgotPassword = useCallback<ForgotPassword>(async (args) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/forgot-password`, {
+      const res = await fetch('/api/users/forgot-password', {
         body: JSON.stringify({
           email: args.email,
         }),
@@ -169,7 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = useCallback<ResetPassword>(async (args) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/reset-password`, {
+      const res = await fetch('/api/users/reset-password', {
         body: JSON.stringify({
           password: args.password,
           passwordConfirm: args.passwordConfirm,
@@ -201,6 +230,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         create,
         forgotPassword,
         login,
+        requestOtp,
+        verifyOtp,
         logout,
         resetPassword,
         setUser,

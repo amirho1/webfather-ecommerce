@@ -98,8 +98,8 @@ export function VariantSelector({ product }: { product: Product }) {
                 <Button
                   variant={'ghost'}
                   aria-disabled={!isAvailableForSale}
-                  className={clsx('px-2', {
-                    'bg-primary/5 text-primary': isActive,
+                  className={clsx('variant-pill', {
+                    'variant-pill-active': isActive,
                   })}
                   disabled={!isAvailableForSale}
                   key={option.id}
@@ -108,7 +108,7 @@ export function VariantSelector({ product }: { product: Product }) {
                       scroll: false,
                     })
                   }}
-                  title={`${option.label} ${!isAvailableForSale ? ' (Out of Stock)' : ''}`}
+                  title={`${option.label} ${!isAvailableForSale ? ' (ناموجود)' : ''}`}
                 >
                   {option.label}
                 </Button>

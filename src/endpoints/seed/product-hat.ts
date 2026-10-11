@@ -61,8 +61,8 @@ export const productHatData: (args: ProductArgs) => RequiredDataFromCollectionSl
     gallery: [{ image: galleryImage }],
     title: 'Hat',
     slug: 'hat',
-    priceInUSDEnabled: true,
-    priceInUSD: 2500,
+    priceInTOMANEnabled: true,
+    priceInTOMAN: 2500,
     relatedProducts: relatedProducts,
   }
 }

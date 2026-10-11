@@ -20,6 +20,7 @@ import { Categories } from '@/collections/Categories'
 import { Media } from '@/collections/Media'
 import { Pages } from '@/collections/Pages'
 import { Users } from '@/collections/Users'
+import { OtpEvents } from '@/collections/OtpEvents'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
 import { plugins } from './plugins'
@@ -39,8 +40,9 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Pages, Categories, Media],
+  collections: [Users, Pages, Categories, Media, OtpEvents],
   db: sqliteAdapter({
+    push: false,
     client: {
       url: process.env.DATABASE_URL || '',
     },

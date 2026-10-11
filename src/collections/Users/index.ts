@@ -1,18 +1,16 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload';
 
-import { adminOnly } from '@/access/adminOnly'
-import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
-import { publicAccess } from '@/access/publicAccess'
-import { adminOrSelf } from '@/access/adminOrSelf'
-import { checkRole } from '@/access/utilities'
-
-import { ensureFirstUserIsAdmin } from './hooks/ensureFirstUserIsAdmin'
+import { adminOnly } from '@/access/adminOnly';
+import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess';
+import { adminOrSelf } from '@/access/adminOrSelf';
+import { checkRole } from '@/access/utilities';
+import { isIranianMobile } from '@/lib/auth/mobileSession';
 
 export const Users: CollectionConfig = {
   slug: 'users',
   access: {
     admin: ({ req: { user } }) => checkRole(['admin'], user),
-    create: publicAccess,
+    create: adminOnly,
     delete: adminOnly,
     read: adminOrSelf,
     unlock: adminOnly,
@@ -29,8 +27,88 @@ export const Users: CollectionConfig = {
   },
   auth: {
     tokenExpiration: 1209600,
+    loginWithUsername: { allowEmailLogin: true, requireEmail: false },
+    strategies: [
+      {
+        name: 'moftkhar-mobile-session',
+        authenticate: async ({ payload, headers }) => {
+          const { authenticateMobileSession } = await import('@/lib/auth/mobileSession')
+          return { user: await authenticateMobileSession(payload, headers) }
+        },
+      },
+    ],
   },
   fields: [
+    {
+      name: 'phoneNumber',
+      type: 'text',
+      unique: true,
+      index: true,
+      label: { en: 'Mobile number', fa: 'شماره موبایل' },
+      validate: (value: unknown) =>
+        !value ||
+        (typeof value === 'string' && isIranianMobile(value)) ||
+        'Enter an Iranian mobile number (09xxxxxxxxx).',
+      access: { update: adminOnlyFieldAccess },
+    },
+    {
+      name: 'phoneVerified',
+      type: 'checkbox',
+      defaultValue: false,
+      access: { create: adminOnlyFieldAccess, update: adminOnlyFieldAccess },
+    },
+    {
+      name: 'otp',
+      type: 'text',
+      hidden: true,
+      access: {
+        read: adminOnlyFieldAccess,
+        create: adminOnlyFieldAccess,
+        update: adminOnlyFieldAccess,
+      },
+    },
+    {
+      name: 'otpExpiresAt',
+      type: 'date',
+      hidden: true,
+      access: {
+        read: adminOnlyFieldAccess,
+        create: adminOnlyFieldAccess,
+        update: adminOnlyFieldAccess,
+      },
+    },
+    {
+      name: 'otpAttempts',
+      type: 'number',
+      defaultValue: 0,
+      hidden: true,
+      access: {
+        read: adminOnlyFieldAccess,
+        create: adminOnlyFieldAccess,
+        update: adminOnlyFieldAccess,
+      },
+    },
+    {
+      name: 'otpLastSentAt',
+      type: 'date',
+      hidden: true,
+      access: {
+        read: adminOnlyFieldAccess,
+        create: adminOnlyFieldAccess,
+        update: adminOnlyFieldAccess,
+      },
+    },
+    {
+      name: 'sessionVersion',
+      type: 'number',
+      defaultValue: 0,
+      hidden: true,
+      access: {
+        read: adminOnlyFieldAccess,
+        create: adminOnlyFieldAccess,
+        update: adminOnlyFieldAccess,
+      },
+    },
     {
       name: 'name',
       type: 'text',
@@ -46,9 +124,6 @@ export const Users: CollectionConfig = {
       },
       defaultValue: ['customer'],
       hasMany: true,
-      hooks: {
-        beforeChange: [ensureFirstUserIsAdmin],
-      },
       options: [
         {
           label: { en: 'Administrator', fa: 'مدیر' },

@@ -1,19 +1,18 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import type { Product, Variant } from '@/payload-types'
+import { Button } from '@/components/ui/button';
+import { useAddToCart } from '@/hooks/useAddToCart';
+import type { Product, Variant } from '@/payload-types';
+import clsx from 'clsx';
+import { useSearchParams } from 'next/navigation';
+import React, { useCallback, useMemo } from 'react';
 
-import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
-import clsx from 'clsx'
-import { useSearchParams } from 'next/navigation'
-import React, { useCallback, useMemo } from 'react'
-import { toast } from 'sonner'
 type Props = {
   product: Product
 }
 
 export function AddToCart({ product }: Props) {
-  const { addItem, cart, isLoading } = useCart()
+  const { addToCart, canAddToCart, isLoading } = useAddToCart()
   const searchParams = useSearchParams()
 
   const variants = product.variants?.docs || []
@@ -37,75 +36,36 @@ export function AddToCart({ product }: Props) {
     return undefined
   }, [product.enableVariants, searchParams, variants])
 
-  const addToCart = useCallback(
+  const handleAdd = useCallback(
     (e: React.FormEvent<HTMLButtonElement>) => {
       e.preventDefault()
-
-      addItem({
+      void addToCart({
         product: product.id,
-        variant: selectedVariant?.id ?? undefined,
-      }).then(() => {
-        toast.success('Item added to cart.')
+        variant: selectedVariant?.id,
       })
     },
-    [addItem, product, selectedVariant],
+    [addToCart, product.id, selectedVariant?.id],
   )
 
   const disabled = useMemo<boolean>(() => {
-    const existingItem = cart?.items?.find((item) => {
-      const productID = typeof item.product === 'object' ? item.product?.id : item.product
-      const variantID = item.variant
-        ? typeof item.variant === 'object'
-          ? item.variant?.id
-          : item.variant
-        : undefined
-
-      if (productID === product.id) {
-        if (product.enableVariants) {
-          return variantID === selectedVariant?.id
-        }
-        return true
-      }
-    })
-
-    if (existingItem) {
-      const existingQuantity = existingItem.quantity
-
-      if (product.enableVariants) {
-        return existingQuantity >= (selectedVariant?.inventory || 0)
-      }
-      return existingQuantity >= (product.inventory || 0)
+    if (product.enableVariants && !selectedVariant) {
+      return true
     }
-
-    if (product.enableVariants) {
-      if (!selectedVariant) {
-        return true
-      }
-
-      if (selectedVariant.inventory === 0) {
-        return true
-      }
-    } else {
-      if (product.inventory === 0) {
-        return true
-      }
-    }
-
-    return false
-  }, [selectedVariant, cart?.items, product])
+    return !canAddToCart(product, selectedVariant)
+  }, [product, selectedVariant, canAddToCart])
 
   return (
     <Button
-      aria-label="Add to cart"
+      aria-label={`افزودن ${product.title} به سبد خرید`}
       variant={'outline'}
       className={clsx({
         'hover:opacity-90': true,
       })}
       disabled={disabled || isLoading}
-      onClick={addToCart}
+      onClick={handleAdd}
       type="submit"
     >
-      Add To Cart
+      افزودن به سبد خرید
     </Button>
   )
 }

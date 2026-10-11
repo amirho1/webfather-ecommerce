@@ -76,6 +76,7 @@ export interface Config {
     pages: Page;
     categories: Category;
     media: Media;
+    otpEvents: OtpEvent;
     forms: Form;
     'form-submissions': FormSubmission;
     addresses: Address;
@@ -109,6 +110,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    otpEvents: OtpEventsSelect<false> | OtpEventsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -163,22 +165,34 @@ export interface Config {
   };
 }
 export interface UserAuthOperations {
-  forgotPassword: {
-    email: string;
-    password: string;
-  };
-  login: {
-    email: string;
-    password: string;
-  };
+  forgotPassword:
+    | {
+        email: string;
+      }
+    | {
+        username: string;
+      };
+  login:
+    | {
+        email: string;
+        password: string;
+      }
+    | {
+        password: string;
+        username: string;
+      };
   registerFirstUser: {
-    email: string;
     password: string;
+    username: string;
+    email?: string;
   };
-  unlock: {
-    email: string;
-    password: string;
-  };
+  unlock:
+    | {
+        email: string;
+      }
+    | {
+        username: string;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -186,6 +200,13 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  phoneNumber?: string | null;
+  phoneVerified?: boolean | null;
+  otp?: string | null;
+  otpExpiresAt?: string | null;
+  otpAttempts?: number | null;
+  otpLastSentAt?: string | null;
+  sessionVersion?: number | null;
   name?: string | null;
   roles?: ('admin' | 'customer')[] | null;
   orders?: {
@@ -205,7 +226,8 @@ export interface User {
   };
   updatedAt: string;
   createdAt: string;
-  email: string;
+  email?: string | null;
+  username: string;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
   salt?: string | null;
@@ -255,7 +277,7 @@ export interface Order {
   transactions?: (number | Transaction)[] | null;
   status?: OrderStatus;
   amount?: number | null;
-  currency?: 'USD' | null;
+  currency?: 'TOMAN' | null;
   accessToken?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -267,6 +289,10 @@ export interface Order {
 export interface Product {
   id: number;
   title: string;
+  shortDescription?: string | null;
+  brandLogo?: (number | null) | Media;
+  badgeColor?: string | null;
+  featured?: boolean | null;
   description?: {
     root: {
       type: string;
@@ -298,8 +324,8 @@ export interface Product {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  priceInUSDEnabled?: boolean | null;
-  priceInUSD?: number | null;
+  priceInTOMANEnabled?: boolean | null;
+  priceInTOMAN?: number | null;
   relatedProducts?: (number | Product)[] | null;
   meta?: {
     title?: string | null;
@@ -600,6 +626,8 @@ export interface ArchiveBlock {
 export interface Category {
   id: number;
   title: string;
+  subtitle?: string | null;
+  iconKey?: ('sparkles' | 'palette' | 'code' | 'grid' | 'graduation') | null;
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
@@ -607,6 +635,7 @@ export interface Category {
   slug: string;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -879,8 +908,8 @@ export interface Variant {
   product: number | Product;
   options: (number | VariantOption)[];
   inventory?: number | null;
-  priceInUSDEnabled?: boolean | null;
-  priceInUSD?: number | null;
+  priceInTOMANEnabled?: boolean | null;
+  priceInTOMAN?: number | null;
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -900,11 +929,6 @@ export interface Transaction {
         id?: string | null;
       }[]
     | null;
-  paymentMethod?: 'stripe' | null;
-  stripe?: {
-    customerID?: string | null;
-    paymentIntentID?: string | null;
-  };
   billingAddress?: {
     title?: string | null;
     firstName?: string | null;
@@ -924,7 +948,7 @@ export interface Transaction {
   order?: (number | null) | Order;
   cart?: (number | null) | Cart;
   amount?: number | null;
-  currency?: 'USD' | null;
+  currency?: 'TOMAN' | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -947,7 +971,7 @@ export interface Cart {
   purchasedAt?: string | null;
   status?: ('active' | 'purchased' | 'abandoned') | null;
   subtotal?: number | null;
-  currency?: 'USD' | null;
+  currency?: 'TOMAN' | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1014,6 +1038,17 @@ export interface Address {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "otpEvents".
+ */
+export interface OtpEvent {
+  id: number;
+  phoneNumber: string;
+  ipHash: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-submissions".
  */
 export interface FormSubmission {
@@ -1068,6 +1103,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'otpEvents';
+        value: number | OtpEvent;
       } | null)
     | ({
         relationTo: 'forms';
@@ -1156,6 +1195,13 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  phoneNumber?: T;
+  phoneVerified?: T;
+  otp?: T;
+  otpExpiresAt?: T;
+  otpAttempts?: T;
+  otpLastSentAt?: T;
+  sessionVersion?: T;
   name?: T;
   roles?: T;
   orders?: T;
@@ -1164,6 +1210,7 @@ export interface UsersSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   email?: T;
+  username?: T;
   resetPasswordToken?: T;
   resetPasswordExpiration?: T;
   salt?: T;
@@ -1357,10 +1404,13 @@ export interface FormBlockSelect<T extends boolean = true> {
  */
 export interface CategoriesSelect<T extends boolean = true> {
   title?: T;
+  subtitle?: T;
+  iconKey?: T;
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1380,6 +1430,16 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "otpEvents_select".
+ */
+export interface OtpEventsSelect<T extends boolean = true> {
+  phoneNumber?: T;
+  ipHash?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1559,8 +1619,8 @@ export interface VariantsSelect<T extends boolean = true> {
   product?: T;
   options?: T;
   inventory?: T;
-  priceInUSDEnabled?: T;
-  priceInUSD?: T;
+  priceInTOMANEnabled?: T;
+  priceInTOMAN?: T;
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;
@@ -1597,6 +1657,10 @@ export interface VariantOptionsSelect<T extends boolean = true> {
  */
 export interface ProductsSelect<T extends boolean = true> {
   title?: T;
+  shortDescription?: T;
+  brandLogo?: T;
+  badgeColor?: T;
+  featured?: T;
   description?: T;
   gallery?:
     | T
@@ -1616,8 +1680,8 @@ export interface ProductsSelect<T extends boolean = true> {
   enableVariants?: T;
   variantTypes?: T;
   variants?: T;
-  priceInUSDEnabled?: T;
-  priceInUSD?: T;
+  priceInTOMANEnabled?: T;
+  priceInTOMAN?: T;
   relatedProducts?: T;
   meta?:
     | T
@@ -1706,13 +1770,6 @@ export interface TransactionsSelect<T extends boolean = true> {
         variant?: T;
         quantity?: T;
         id?: T;
-      };
-  paymentMethod?: T;
-  stripe?:
-    | T
-    | {
-        customerID?: T;
-        paymentIntentID?: T;
       };
   billingAddress?:
     | T

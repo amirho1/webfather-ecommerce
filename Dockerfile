@@ -13,9 +13,7 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG NEXT_PUBLIC_SERVER_URL=http://localhost:4000
-ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
-ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 ENV NODE_ENV=production
 RUN --mount=type=tmpfs,target=/tmp \
   export DATABASE_URL=file:/tmp/build.db PAYLOAD_SECRET=build-only-placeholder \

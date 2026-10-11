@@ -2,9 +2,9 @@ export const adminCopy = {
   en: {
     welcome: 'Welcome to your dashboard!',
     nextSteps: "Here's what to do next:",
-    seededIntro: ' with a few products and pages to get your project started, then ',
+    seededIntro: ' to import draft categories and products. Review them before publishing, then ',
     visitWebsite: 'visit your website',
-    seededOutro: ' to see the results.',
+    seededOutro: ' after publishing to see the results.',
     stripeIntro: 'Go to ',
     stripeLink: 'Stripe to get your API keys',
     stripeOutro: '. Create an account if needed, add the keys to your environment variables, and restart the server. See the ',
@@ -40,7 +40,7 @@ export const adminCopy = {
   fa: {
     welcome: 'به پیشخوان خوش آمدید!',
     nextSteps: 'برای شروع این کارها را انجام دهید:',
-    seededIntro: ' با چند محصول و صفحهٔ نمونه، کار را شروع کنید و سپس ',
+    seededIntro: ' تا دسته‌ها و محصولات نمونه به‌صورت پیش‌نویس افزوده شوند. پس از بررسی و انتشار، ',
     visitWebsite: 'از وب‌سایت بازدید کنید',
     seededOutro: ' تا نتیجه را ببینید.',
     stripeIntro: 'به ',

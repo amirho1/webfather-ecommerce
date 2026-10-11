@@ -5,6 +5,7 @@ import { adminOnly } from '@/access/adminOnly'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
+  versions: { drafts: true },
   access: {
     create: adminOnly,
     delete: adminOnly,
@@ -25,6 +26,13 @@ export const Categories: CollectionConfig = {
       type: 'text',
       label: { en: 'Title', fa: 'عنوان' },
       required: true,
+    },
+    { name: 'subtitle', type: 'text', label: { en: 'Subtitle', fa: 'زیرعنوان' } },
+    {
+      name: 'iconKey',
+      type: 'select',
+      label: { en: 'Icon', fa: 'آیکون' },
+      options: ['sparkles', 'palette', 'code', 'grid', 'graduation'],
     },
     slugField({
       position: undefined,

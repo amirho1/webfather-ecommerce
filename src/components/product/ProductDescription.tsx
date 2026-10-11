@@ -1,92 +1,38 @@
 'use client'
-import type { Product, Variant } from '@/payload-types'
 
+import type { Product, Variant } from '@/payload-types'
 import { RichText } from '@/components/RichText'
 import { AddToCart } from '@/components/Cart/AddToCart'
-import { Price } from '@/components/Price'
-import React, { Suspense } from 'react'
-
+import { formatToman, getPrice } from '@/lib/formatToman'
+import { ProductLogo } from '@/components/storefront/Brand'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { VariantSelector } from './VariantSelector'
-import { useCurrency } from '@payloadcms/plugin-ecommerce/client/react'
-import { StockIndicator } from '@/components/product/StockIndicator'
 
 export function ProductDescription({ product }: { product: Product }) {
-  const { currency } = useCurrency()
-  let amount = 0,
-    lowestAmount = 0,
-    highestAmount = 0
-  const priceField = `priceIn${currency.code}` as keyof Product
-  const hasVariants = product.enableVariants && Boolean(product.variants?.docs?.length)
+  const searchParams = useSearchParams()
+  const variants = (product.variants?.docs || []).filter((variant): variant is Variant => typeof variant === 'object')
+  const selected = variants.find((variant) => String(variant.id) === searchParams.get('variant'))
+  const availablePrices = variants.map((variant) => getPrice(product, variant)).filter((value): value is number => value !== null)
+  const price = getPrice(product, selected)
+  const displayedPrice = product.enableVariants && !selected && availablePrices.length
+    ? `${formatToman(Math.min(...availablePrices))} تا ${formatToman(Math.max(...availablePrices))}`
+    : price === null ? 'قیمت ثبت نشده' : formatToman(price)
+  const inventory = selected?.inventory ?? product.inventory ?? 0
+  const available = product.enableVariants
+    ? selected ? inventory > 0 : variants.some((variant) => (variant.inventory ?? 0) > 0)
+    : inventory > 0
+  const category = product.categories?.find((entry) => typeof entry === 'object')
 
-  if (hasVariants) {
-    const priceField = `priceIn${currency.code}` as keyof Variant
-    const variantsOrderedByPrice = product.variants?.docs
-      ?.filter((variant) => variant && typeof variant === 'object')
-      .sort((a, b) => {
-        if (
-          typeof a === 'object' &&
-          typeof b === 'object' &&
-          priceField in a &&
-          priceField in b &&
-          typeof a[priceField] === 'number' &&
-          typeof b[priceField] === 'number'
-        ) {
-          return a[priceField] - b[priceField]
-        }
-
-        return 0
-      }) as Variant[]
-
-    const lowestVariant = variantsOrderedByPrice[0][priceField]
-    const highestVariant = variantsOrderedByPrice[variantsOrderedByPrice.length - 1][priceField]
-    if (
-      variantsOrderedByPrice &&
-      typeof lowestVariant === 'number' &&
-      typeof highestVariant === 'number'
-    ) {
-      lowestAmount = lowestVariant
-      highestAmount = highestVariant
-    }
-  } else if (product[priceField] && typeof product[priceField] === 'number') {
-    amount = product[priceField]
-  }
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="text-2xl font-medium">{product.title}</h1>
-        <div className="uppercase font-mono">
-          {hasVariants ? (
-            <Price highestAmount={highestAmount} lowestAmount={lowestAmount} />
-          ) : (
-            <Price amount={amount} />
-          )}
-        </div>
-      </div>
-      {product.description ? (
-        <RichText className="" data={product.description} enableGutter={false} />
-      ) : null}
-      <hr />
-      {hasVariants && (
-        <>
-          <Suspense fallback={null}>
-            <VariantSelector product={product} />
-          </Suspense>
-
-          <hr />
-        </>
-      )}
-      <div className="flex items-center justify-between">
-        <Suspense fallback={null}>
-          <StockIndicator product={product} />
-        </Suspense>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <Suspense fallback={null}>
-          <AddToCart product={product} />
-        </Suspense>
-      </div>
-    </div>
-  )
+  return <div className="product-detail-info">
+    <div className="product-detail-brand" style={{ backgroundColor: product.badgeColor || '#f1f4ff' }}><ProductLogo media={product.brandLogo} name={product.title}/></div>
+    {category && typeof category === 'object' && <span className="category-label">{category.title}</span>}
+    <h1 dir="ltr">{product.title}</h1>
+    {product.shortDescription && <p className="product-detail-blurb">{product.shortDescription}</p>}
+    <div className="product-detail-price">{displayedPrice}</div>
+    <p className={available ? 'stock-ok' : 'stock-out'}>{available ? 'موجود' : 'ناموجود'}</p>
+    {product.enableVariants && <Suspense fallback={null}><VariantSelector product={product}/></Suspense>}
+    <Suspense fallback={null}><AddToCart product={product}/></Suspense>
+    {product.description && <div className="product-detail-description"><h2>درباره این اشتراک</h2><RichText data={product.description} enableGutter={false}/></div>}
+  </div>
 }

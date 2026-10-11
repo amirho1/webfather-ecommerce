@@ -1,30 +1,31 @@
 'use client'
 
-import { Media } from '@/components/Media'
-import { Message } from '@/components/Message'
-import { Price } from '@/components/Price'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useAuth } from '@/providers/Auth'
-import { useTheme } from '@/providers/Theme'
-import { Elements } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import React, { Suspense, useCallback, useEffect, useState } from 'react'
+import { Media } from '@/components/Media';
+import { Message } from '@/components/Message';
+import { Price } from '@/components/Price';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/providers/Auth';
+import { useTheme } from '@/providers/Theme';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { Suspense, useCallback, useEffect, useState } from 'react';
 
-import { cssVariables } from '@/cssVariables'
-import { CheckoutForm } from '@/components/forms/CheckoutForm'
-import { useAddresses, useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
-import { CheckoutAddresses } from '@/components/checkout/CheckoutAddresses'
-import { CreateAddressModal } from '@/components/addresses/CreateAddressModal'
-import { Address, Product, Variant } from '@/payload-types'
-import { Checkbox } from '@/components/ui/checkbox'
-import { AddressItem } from '@/components/addresses/AddressItem'
-import { FormItem } from '@/components/forms/FormItem'
-import { toast } from 'sonner'
-import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { AddressItem } from '@/components/addresses/AddressItem';
+import { CreateAddressModal } from '@/components/addresses/CreateAddressModal';
+import { CheckoutAddresses } from '@/components/checkout/CheckoutAddresses';
+import { CheckoutForm } from '@/components/forms/CheckoutForm';
+import { FormItem } from '@/components/forms/FormItem';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cssVariables } from '@/cssVariables';
+import { getPrice } from '@/lib/formatToman';
+import { Address, Product, Variant } from '@/payload-types';
+import { useAddresses, useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react';
+import { toast } from 'sonner';
 
 const apiKey = `${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}`
 const stripe = loadStripe(apiKey)
@@ -366,12 +367,11 @@ export const CheckoutPage: React.FC = () => {
               if (!quantity) return null
 
               let image = gallery?.[0]?.image || meta?.image
-              let price = product?.priceInUSD
+              const price = getPrice(product, variant)
 
               const isVariant = Boolean(variant) && typeof variant === 'object'
 
               if (isVariant) {
-                price = variant?.priceInUSD
 
                 const imageVariant = product.gallery?.find((item: NonNullable<Product['gallery']>[number]) => {
                   if (!item.variantOption) return false

@@ -1,20 +1,18 @@
-import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
-import { seoPlugin } from '@payloadcms/plugin-seo'
-import { Plugin, type CollectionConfig } from 'payload'
-import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
-import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
-import { ecommercePlugin } from '@payloadcms/plugin-ecommerce'
+import { ecommercePlugin } from '@payloadcms/plugin-ecommerce';
+import { formBuilderPlugin } from '@payloadcms/plugin-form-builder';
+import { seoPlugin } from '@payloadcms/plugin-seo';
+import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types';
+import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical';
+import { Plugin, type CollectionConfig } from 'payload';
 
-import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
-
-import { Page, Product } from '@/payload-types'
-import { getServerSideURL } from '@/utilities/getURL'
-import { ProductsCollection } from '@/collections/Products'
-import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
-import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
-import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
-import { isAdmin } from '@/access/isAdmin'
-import { isDocumentOwner } from '@/access/isDocumentOwner'
+import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess';
+import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus';
+import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess';
+import { isAdmin } from '@/access/isAdmin';
+import { isDocumentOwner } from '@/access/isDocumentOwner';
+import { ProductsCollection } from '@/collections/Products';
+import { Page, Product } from '@/payload-types';
+import { getServerSideURL } from '@/utilities/getURL';
 
 const localizeCollection = (
   collection: CollectionConfig,
@@ -34,7 +32,7 @@ const localizeCollection = (
 })
 
 const generateTitle: GenerateTitle<Product | Page> = ({ doc }) => {
-  return doc?.title ? `${doc.title} | Payload Ecommerce Template` : 'Payload Ecommerce Template'
+  return doc?.title ? `${doc.title} | مفت خر` : 'مفت خر'
 }
 
 const generateURL: GenerateURL<Product | Page> = ({ doc }) => {
@@ -102,6 +100,12 @@ export const plugins: Plugin[] = [
     },
   }),
   ecommercePlugin({
+    currencies: {
+      supportedCurrencies: [
+        { code: 'TOMAN', decimals: 0, label: 'Iranian Toman', symbol: 'تومان' },
+      ],
+      defaultCurrency: 'TOMAN',
+    },
     access: {
       adminOnlyFieldAccess,
       adminOrPublishedStatus,
@@ -114,7 +118,15 @@ export const plugins: Plugin[] = [
     },
     orders: {
       ordersCollectionOverride: ({ defaultCollection }) => ({
-        ...localizeCollection(defaultCollection, 'Order', 'Orders', 'سفارش', 'سفارش‌ها', 'Ecommerce', 'فروشگاه'),
+        ...localizeCollection(
+          defaultCollection,
+          'Order',
+          'Orders',
+          'سفارش',
+          'سفارش‌ها',
+          'Ecommerce',
+          'فروشگاه',
+        ),
         fields: [
           ...defaultCollection.fields,
           {
@@ -142,34 +154,74 @@ export const plugins: Plugin[] = [
     },
     carts: {
       cartsCollectionOverride: ({ defaultCollection }) =>
-        localizeCollection(defaultCollection, 'Cart', 'Carts', 'سبد خرید', 'سبدهای خرید', 'Ecommerce', 'فروشگاه'),
+        localizeCollection(
+          defaultCollection,
+          'Cart',
+          'Carts',
+          'سبد خرید',
+          'سبدهای خرید',
+          'Ecommerce',
+          'فروشگاه',
+        ),
     },
     transactions: {
       transactionsCollectionOverride: ({ defaultCollection }) =>
-        localizeCollection(defaultCollection, 'Transaction', 'Transactions', 'تراکنش', 'تراکنش‌ها', 'Ecommerce', 'فروشگاه'),
+        localizeCollection(
+          defaultCollection,
+          'Transaction',
+          'Transactions',
+          'تراکنش',
+          'تراکنش‌ها',
+          'Ecommerce',
+          'فروشگاه',
+        ),
     },
     addresses: {
       addressesCollectionOverride: ({ defaultCollection }) =>
-        localizeCollection(defaultCollection, 'Address', 'Addresses', 'نشانی', 'نشانی‌ها', 'Ecommerce', 'فروشگاه'),
+        localizeCollection(
+          defaultCollection,
+          'Address',
+          'Addresses',
+          'نشانی',
+          'نشانی‌ها',
+          'Ecommerce',
+          'فروشگاه',
+        ),
     },
-    payments: {
-      paymentMethods: [
-        stripeAdapter({
-          secretKey: process.env.STRIPE_SECRET_KEY!,
-          publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
-          webhookSecret: process.env.STRIPE_WEBHOOKS_SIGNING_SECRET!,
-        }),
-      ],
-    },
+    payments: { paymentMethods: [] },
     products: {
       productsCollectionOverride: ProductsCollection,
       variants: {
         variantsCollectionOverride: ({ defaultCollection }) =>
-          localizeCollection(defaultCollection, 'Variant', 'Variants', 'گونه', 'گونه‌ها', 'Ecommerce', 'فروشگاه'),
+          localizeCollection(
+            defaultCollection,
+            'Variant',
+            'Variants',
+            'گونه',
+            'گونه‌ها',
+            'Ecommerce',
+            'فروشگاه',
+          ),
         variantOptionsCollectionOverride: ({ defaultCollection }) =>
-          localizeCollection(defaultCollection, 'Variant option', 'Variant options', 'گزینهٔ گونه', 'گزینه‌های گونه', 'Ecommerce', 'فروشگاه'),
+          localizeCollection(
+            defaultCollection,
+            'Variant option',
+            'Variant options',
+            'گزینهٔ گونه',
+            'گزینه‌های گونه',
+            'Ecommerce',
+            'فروشگاه',
+          ),
         variantTypesCollectionOverride: ({ defaultCollection }) =>
-          localizeCollection(defaultCollection, 'Variant type', 'Variant types', 'نوع گونه', 'انواع گونه', 'Ecommerce', 'فروشگاه'),
+          localizeCollection(
+            defaultCollection,
+            'Variant type',
+            'Variant types',
+            'نوع گونه',
+            'انواع گونه',
+            'Ecommerce',
+            'فروشگاه',
+          ),
       },
     },
   }),

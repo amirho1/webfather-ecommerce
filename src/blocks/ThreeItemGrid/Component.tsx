@@ -1,22 +1,15 @@
-import type { Media, Product, ThreeItemGridBlock as ThreeItemGridBlockProps } from '@/payload-types'
+import type { Media, Product, ThreeItemGridBlock as ThreeItemGridBlockProps } from '@/payload-types';
 
-import { GridTileImage } from '@/components/Grid/tile'
-import Link from 'next/link'
-import React from 'react'
-import type { DefaultDocumentIDType } from 'payload'
+import { GridTileImage } from '@/components/Grid/tile';
+import { getCardPrice } from '@/lib/formatToman';
+import Link from 'next/link';
+import type { DefaultDocumentIDType } from 'payload';
+import React from 'react';
 
 type Props = { item: Product; priority?: boolean; size: 'full' | 'half' }
 
 export const ThreeItemGridItem: React.FC<Props> = ({ item, size }) => {
-  let price = item.priceInUSD
-
-  if (item.enableVariants && item.variants?.docs?.length) {
-    const variant = item.variants.docs[0]
-
-    if (variant && typeof variant === 'object' && variant.priceInUSD) {
-      price = variant.priceInUSD
-    }
-  }
+  const price = getCardPrice(item)
 
   return (
     <div

@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
 
 import configPromise from '@payload-config'
+import { checkRole } from '@/access/utilities'
 
 export type PreviewSearchParams = {
   path: string
@@ -38,10 +39,11 @@ export async function GET(req: NextRequest): Promise<Response> {
   let user
 
   try {
-    user = await payload.auth({
+    const auth = await payload.auth({
       req: req as unknown as PayloadRequest,
       headers: req.headers,
     })
+    user = auth.user
   } catch (error) {
     payload.logger.error({ err: error }, 'Error verifying token for live preview')
     return new Response('You are not allowed to preview this page', { status: 403 })
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const draft = await draftMode()
 
-  if (!user) {
+  if (!user || !checkRole(['admin'], user)) {
     draft.disable()
     return new Response('You are not allowed to preview this page', { status: 403 })
   }

@@ -1,71 +1,23 @@
 'use client'
-import { useCurrency } from '@payloadcms/plugin-ecommerce/client/react'
-import React, { useMemo } from 'react'
 
-type BaseProps = {
+import React from 'react'
+import { formatToman } from '@/lib/formatToman'
+
+type Props = {
   className?: string
+  currencyCode?: string
   currencyCodeClassName?: string
   as?: 'span' | 'p'
-}
+} & ({ amount: number; highestAmount?: never; lowestAmount?: never } | { amount?: never; highestAmount: number; lowestAmount: number })
 
-type PriceFixed = {
-  amount: number
-  currencyCode?: string
-  highestAmount?: never
-  lowestAmount?: never
-}
-
-type PriceRange = {
-  amount?: never
-  currencyCode?: string
-  highestAmount: number
-  lowestAmount: number
-}
-
-type Props = BaseProps & (PriceFixed | PriceRange)
-
-export const Price = ({
-  amount,
-  className,
-  highestAmount,
-  lowestAmount,
-  currencyCode: currencyCodeFromProps,
-  as = 'p',
-}: Props & React.ComponentProps<'p'>) => {
-  const { formatCurrency, supportedCurrencies } = useCurrency()
-
+export const Price = ({ amount, className, highestAmount, lowestAmount, as = 'p' }: Props & React.ComponentProps<'p'>) => {
   const Element = as
-
-  const currencyToUse = useMemo(() => {
-    if (currencyCodeFromProps) {
-      return supportedCurrencies.find((currency) => currency.code === currencyCodeFromProps)
-    }
-    return undefined
-  }, [currencyCodeFromProps, supportedCurrencies])
-
-  if (typeof amount === 'number') {
-    return (
-      <Element className={className} suppressHydrationWarning>
-        {formatCurrency(amount, { currency: currencyToUse })}
-      </Element>
-    )
+  if (typeof amount === 'number') return <Element className={className}>{formatToman(amount)}</Element>
+  if (typeof lowestAmount === 'number') {
+    const label = highestAmount !== lowestAmount
+      ? `${formatToman(lowestAmount)} تا ${formatToman(highestAmount)}`
+      : formatToman(lowestAmount)
+    return <Element className={className}>{label}</Element>
   }
-
-  if (highestAmount && highestAmount !== lowestAmount) {
-    return (
-      <Element className={className} suppressHydrationWarning>
-        {`${formatCurrency(lowestAmount, { currency: currencyToUse })} - ${formatCurrency(highestAmount, { currency: currencyToUse })}`}
-      </Element>
-    )
-  }
-
-  if (lowestAmount) {
-    return (
-      <Element className={className} suppressHydrationWarning>
-        {`${formatCurrency(lowestAmount, { currency: currencyToUse })}`}
-      </Element>
-    )
-  }
-
   return null
 }

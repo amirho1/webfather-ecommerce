@@ -1,4 +1,8 @@
-# Payload Ecommerce Template
+# Moftkhar
+
+The current release is a Persian RTL storefront backed by Payload. It supports browsing, mobile OTP accounts, and persistent carts. Ordering and payment are unavailable. See [STOREFRONT.md](./STOREFRONT.md) for setup, migration, draft import, and SMS configuration.
+
+The template notes below describe the original Payload starter and include features that are disabled in this release.
 
 This template is in **BETA**.
 

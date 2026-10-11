@@ -1,33 +1,20 @@
-import type { Product, Variant } from '@/payload-types'
+import type { Product } from '@/payload-types';
 
-import Link from 'next/link'
-import React from 'react'
-import clsx from 'clsx'
-import { Media } from '@/components/Media'
-import { Price } from '@/components/Price'
+import { Media } from '@/components/Media';
+import { Price } from '@/components/Price';
+import clsx from 'clsx';
+import Link from 'next/link';
+import React from 'react';
+
+import { getCardPrice } from '@/lib/formatToman';
 
 type Props = {
   product: Partial<Product>
 }
 
 export const ProductGridItem: React.FC<Props> = ({ product }) => {
-  const { gallery, priceInUSD, title } = product
-
-  let price = priceInUSD
-
-  const variants = product.variants?.docs
-
-  if (variants && variants.length > 0) {
-    const variant = variants[0]
-    if (
-      variant &&
-      typeof variant === 'object' &&
-      variant?.priceInUSD &&
-      typeof variant.priceInUSD === 'number'
-    ) {
-      price = variant.priceInUSD
-    }
-  }
+  const { gallery, title } = product
+  const price = getCardPrice(product)
 
   const image =
     gallery?.[0]?.image && typeof gallery[0]?.image !== 'string' ? gallery[0]?.image : false

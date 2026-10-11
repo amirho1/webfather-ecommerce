@@ -28,21 +28,6 @@ export const BeforeDashboard: React.FC = () => {
           {copy.seededOutro}
         </li>
         <li>
-          {copy.stripeIntro}
-          <a href="https://dashboard.stripe.com/test/apikeys" rel="noopener noreferrer" target="_blank">
-            {copy.stripeLink}
-          </a>
-          {copy.stripeOutro}
-          <a
-            href="https://github.com/payloadcms/payload/blob/3.x/templates/ecommerce/README.md#stripe"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            {copy.readme}
-          </a>
-          {copy.readmeOutro}
-        </li>
-        <li>
           {copy.modifyIntro}
           <a href="https://payloadcms.com/docs/configuration/collections" rel="noopener noreferrer" target="_blank">
             {copy.collections}
