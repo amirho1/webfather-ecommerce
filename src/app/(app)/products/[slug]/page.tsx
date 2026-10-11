@@ -4,6 +4,7 @@ import type { Media, Product } from '@/payload-types';
 import config from '@payload-config';
 import { ArrowLeft } from 'lucide-react';
 import { draftMode } from 'next/headers';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPayload } from 'payload';
@@ -40,7 +41,7 @@ export default async function ProductPage({ params }: Props) {
   return <div className="product-page container">
     <Link className="product-back" href="/shop"><ArrowLeft size={18}/> همه اشتراک‌ها</Link>
     <div className="product-detail">
-      <div className="product-detail-gallery">{gallery.length ? gallery.map((image) => <img key={image.id} src={image.url || '/images/moftkhar.svg'} alt={image.alt || product.title} width={520} height={520}/>) : <div className="product-detail-placeholder" style={{ backgroundColor: product.badgeColor || '#f1f4ff' }}><img src={typeof product.brandLogo === 'object' && product.brandLogo?.url ? product.brandLogo.url : '/images/moftkhar.svg'} alt={product.title} width={180} height={180}/></div>}</div>
+      <div className="product-detail-gallery">{gallery.length ? gallery.map((image) => <Image key={image.id} src={image.url || '/images/moftkhar.svg'} alt={image.alt || product.title} width={520} height={520}/>) : <div className="product-detail-placeholder" style={{ backgroundColor: product.badgeColor || '#f1f4ff' }}><Image src={typeof product.brandLogo === 'object' && product.brandLogo?.url ? product.brandLogo.url : '/images/moftkhar.svg'} alt={product.title} width={180} height={180}/></div>}</div>
       <Suspense fallback={null}><ProductDescription product={product}/></Suspense>
     </div>
     {related.length > 0 && <section className="related-products"><h2>شاید این‌ها رو هم دوست داشته باشی</h2><div className="product-grid">{related.map((item) => <ProductCard key={item.id} product={item}/>)}</div></section>}

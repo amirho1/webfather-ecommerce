@@ -1,5 +1,15 @@
 import type { Product } from '@/payload-types';
-import { ArrowLeft, ArrowUpLeft, Asterisk, BadgeCheck, Headphones, ShoppingBag, Sparkle, Sparkles } from 'lucide-react';
+import {
+    ArrowLeft,
+    ArrowUpLeft,
+    Asterisk,
+    BadgeCheck,
+    Headphones,
+    ShoppingBag,
+    Sparkle,
+    Sparkles,
+} from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ProductLogo } from './Brand';
 
@@ -56,7 +66,7 @@ export function Hero({ brands }: { brands: Product[] }) {
           <Sparkle size="1em" />
         </span>
         <span className="art-caption">گرون نخر، مفت بخر!</span>
-        <img
+        <Image
           className="hero-mascot"
           src="/images/moftkhar.svg"
           alt="ماسکات مفت خر با ساک خرید نارنجی"

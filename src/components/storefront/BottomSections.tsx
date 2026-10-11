@@ -1,4 +1,5 @@
 import { ArrowLeft, Asterisk, Headphones, Layers, MousePointer2, Plus, Wallet } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 const benefits = [
@@ -70,7 +71,7 @@ export function BottomSections() {
             <br />
             <span>گرون نخر!</span>
           </h2>
-          <p>اشتراک ابزارهای موردعلاقه‌ات رو توی مفت خر پیدا کن.</p>
+          <p className="text-white!">اشتراک ابزارهای موردعلاقه‌ات رو توی مفت خر پیدا کن.</p>
           <a className="action dark-action" href="#catalog">
             همین حالا انتخاب کن <ArrowLeft size={19} />
           </a>
@@ -79,7 +80,13 @@ export function BottomSections() {
           <span aria-hidden="true">
             <Asterisk size="1em" />
           </span>
-          <img src="/images/moftkhar.svg" alt="ماسکات مفت خر" width="380" height="285" loading="lazy" />
+          <Image
+            src="/images/moftkhar.svg"
+            alt="ماسکات مفت خر"
+            width="380"
+            height="285"
+            loading="lazy"
+          />
         </div>
       </section>
       <section className="faq-section container" id="faq">
