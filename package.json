@@ -8,6 +8,7 @@
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build --webpack",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev --webpack --port=4000",
     "dev:prod": "cross-env NODE_OPTIONS=--no-deprecation rm -rf .next && pnpm build && pnpm start",
+    "db:migrate": "pnpm payload migrate",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "seed:moftkhar": "cross-env NODE_OPTIONS=--no-deprecation NODE_ENV=production node --import=tsx src/scripts/run-seed-moftkhar.ts",
