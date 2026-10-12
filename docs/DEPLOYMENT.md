@@ -97,6 +97,8 @@ openssl rand -base64 32
 ```
 
 ### Production `.env` Template
+Run `pnpm env:production` to create a private `.env` file with fresh secrets and `https://moftkhar.ir` URLs for Docker Compose. The script refuses to overwrite an existing file. Add your Melipayamak credentials before enabling live OTP delivery. Pass another output path if you want to generate a separate file.
+
 ```dotenv
 PAYLOAD_SECRET=YOUR_GENERATED_PAYLOAD_SECRET_HERE
 PREVIEW_SECRET=YOUR_GENERATED_PREVIEW_SECRET_HERE
