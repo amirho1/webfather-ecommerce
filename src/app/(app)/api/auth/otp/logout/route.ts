@@ -1,11 +1,11 @@
 import {
-    authenticateMobileSession,
-    mobileCookieName,
-    mobileCookieOptions,
-} from '@/lib/auth/mobileSession';
-import config from '@payload-config';
-import { NextResponse, type NextRequest } from 'next/server';
-import { getPayload } from 'payload';
+  authenticateMobileSession,
+  mobileCookieName,
+  mobileCookieOptions,
+} from '@/lib/auth/mobileSession'
+import config from '@payload-config'
+import { NextResponse, type NextRequest } from 'next/server'
+import { getPayload } from 'payload'
 
 export const runtime = 'nodejs'
 

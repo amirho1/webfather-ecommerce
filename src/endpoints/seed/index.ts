@@ -1,5 +1,5 @@
-import { seedMoftkhar } from '@/scripts/seed-moftkhar';
-import type { Payload, PayloadRequest } from 'payload';
+import { seedMoftkhar } from '@/scripts/seed-moftkhar'
+import type { Payload, PayloadRequest } from 'payload'
 
 export const seed = async ({
   payload,

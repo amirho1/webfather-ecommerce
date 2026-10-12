@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
-import type { Payload } from 'payload';
+import { createHash } from 'node:crypto'
+import type { Payload } from 'payload'
 
 export const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hour
 export const MAX_REQUESTS_PER_PHONE = 5
@@ -12,11 +12,17 @@ const ipTimestamps = new Map<string, number[]>()
 const phoneCooldowns = new Map<string, number>()
 
 let lastCleanupAt = 0
-const CLEANUP_INTERVAL_MS = 60 * 60 * 1000 // Prune DB at most once per hour
+let lastDbCleanupAt = 0
+let isDbCleanupRunning = false
+const CLEANUP_INTERVAL_MS = 15 * 60 * 1000
+const MEMORY_THRESHOLD_SIZE = 500 // Run immediate cleanup if any Map exceeds 500 entries
 
 /**
  * Safely extracts client IP without allowing spoofed or 'unknown' shared bucket lockouts.
  * Returns null if no reliable IP could be extracted.
+ *
+ * @param request - Incoming HTTP request.
+ * @returns Client IP string or null.
  */
 export function extractClientIp(request: Request): string | null {
   const forwarded = request.headers.get('x-forwarded-for')
@@ -35,6 +41,12 @@ export function extractClientIp(request: Request): string | null {
   return null
 }
 
+/**
+ * Creates a SHA-256 hash of an IP address for privacy-compliant database logging.
+ *
+ * @param ip - Plain IP address string.
+ * @returns Hex-encoded SHA-256 hash.
+ */
 export function hashIp(ip: string): string {
   return createHash('sha256').update(ip).digest('hex')
 }
@@ -46,27 +58,77 @@ export interface RateLimitCheckResult {
 }
 
 /**
- * Fast in-memory rate limit and cooldown check.
- * This runs BEFORE any database writes or expensive queries.
+ * Purges expired in-memory rate limiting entries across all tracking Maps.
+ * Prevents memory leaks by evicting stale phone numbers, IPs, and cooldown entries.
+ *
+ * @param now - Reference timestamp in milliseconds (defaults to Date.now()).
  */
-export function checkRateLimit(phone: string, clientIp: string | null): RateLimitCheckResult {
+export function cleanupExpiredRateLimits(now: number = Date.now()): void {
+  // 1. Evict expired phone cooldowns
+  for (const [phone, timestamp] of phoneCooldowns.entries()) {
+    if (now - timestamp >= OTP_COOLDOWN_MS) {
+      phoneCooldowns.delete(phone)
+    }
+  }
+
+  // 2. Evict expired phone request timestamps
+  for (const [phone, timestamps] of phoneTimestamps.entries()) {
+    const valid = timestamps.filter((time) => now - time < RATE_LIMIT_WINDOW_MS)
+    if (valid.length === 0) {
+      phoneTimestamps.delete(phone)
+    } else if (valid.length < timestamps.length) {
+      phoneTimestamps.set(phone, valid)
+    }
+  }
+
+  // 3. Evict expired IP request timestamps
+  for (const [ip, timestamps] of ipTimestamps.entries()) {
+    const valid = timestamps.filter((time) => now - time < RATE_LIMIT_WINDOW_MS)
+    if (valid.length === 0) {
+      ipTimestamps.delete(ip)
+    } else if (valid.length < timestamps.length) {
+      ipTimestamps.set(ip, valid)
+    }
+  }
+}
+
+/**
+ * Atomically checks and reserves a rate limit slot before the caller awaits.
+ *
+ * @param phone - Destination mobile phone number.
+ * @param clientIp - Client IP address or null.
+ * @returns Rate limit evaluation result.
+ */
+export function checkAndReserveRateLimit(
+  phone: string,
+  clientIp: string | null,
+): RateLimitCheckResult {
   const now = Date.now()
 
   // 1. Check cooldown (60s)
   const lastSent = phoneCooldowns.get(phone)
-  if (lastSent && now - lastSent < OTP_COOLDOWN_MS) {
-    return {
-      allowed: false,
-      error: 'لطفاً یک دقیقه صبر کنید.',
-      statusCode: 429,
+  if (lastSent) {
+    if (now - lastSent < OTP_COOLDOWN_MS) {
+      return {
+        allowed: false,
+        error: 'لطفاً یک دقیقه صبر کنید.',
+        statusCode: 429,
+      }
     }
+    // Cooldown expired: clean up key immediately
+    phoneCooldowns.delete(phone)
   }
 
   // 2. Check per-phone sliding window limit
   const phoneAttempts = (phoneTimestamps.get(phone) || []).filter(
     (time) => now - time < RATE_LIMIT_WINDOW_MS,
   )
-  phoneTimestamps.set(phone, phoneAttempts)
+
+  if (phoneAttempts.length === 0) {
+    phoneTimestamps.delete(phone)
+  } else {
+    phoneTimestamps.set(phone, phoneAttempts)
+  }
 
   if (phoneAttempts.length >= MAX_REQUESTS_PER_PHONE) {
     return {
@@ -81,7 +143,12 @@ export function checkRateLimit(phone: string, clientIp: string | null): RateLimi
     const ipAttempts = (ipTimestamps.get(clientIp) || []).filter(
       (time) => now - time < RATE_LIMIT_WINDOW_MS,
     )
-    ipTimestamps.set(clientIp, ipAttempts)
+
+    if (ipAttempts.length === 0) {
+      ipTimestamps.delete(clientIp)
+    } else {
+      ipTimestamps.set(clientIp, ipAttempts)
+    }
 
     if (ipAttempts.length >= MAX_REQUESTS_PER_IP) {
       return {
@@ -92,32 +159,37 @@ export function checkRateLimit(phone: string, clientIp: string | null): RateLimi
     }
   }
 
+  phoneCooldowns.set(phone, now)
+  phoneTimestamps.set(phone, [...phoneAttempts, now])
+  if (clientIp) {
+    ipTimestamps.set(clientIp, [...(ipTimestamps.get(clientIp) || []), now])
+  }
+
+  const isTimeForCleanup = now - lastCleanupAt >= CLEANUP_INTERVAL_MS
+  const isThresholdReached =
+    phoneTimestamps.size > MEMORY_THRESHOLD_SIZE ||
+    ipTimestamps.size > MEMORY_THRESHOLD_SIZE ||
+    phoneCooldowns.size > MEMORY_THRESHOLD_SIZE
+  if (isTimeForCleanup || isThresholdReached) {
+    lastCleanupAt = now
+    cleanupExpiredRateLimits(now)
+  }
+
   return { allowed: true }
 }
 
 /**
- * Records a successful rate-limited attempt in memory and asynchronously in Payload otpEvents.
+ * Persists an already reserved attempt in Payload otpEvents.
+ *
+ * @param payload - Payload CMS instance.
+ * @param phone - Destination phone number.
+ * @param clientIp - Client IP address or null.
  */
-export async function recordOtpAttempt(
+export async function logOtpAttemptToDb(
   payload: Payload,
   phone: string,
   clientIp: string | null,
 ): Promise<void> {
-  const now = Date.now()
-
-  // Update in-memory trackers
-  phoneCooldowns.set(phone, now)
-
-  const pAttempts = phoneTimestamps.get(phone) || []
-  pAttempts.push(now)
-  phoneTimestamps.set(phone, pAttempts)
-
-  if (clientIp) {
-    const iAttempts = ipTimestamps.get(clientIp) || []
-    iAttempts.push(now)
-    ipTimestamps.set(clientIp, iAttempts)
-  }
-
   // Persist event to DB for multi-instance auditing
   const ipHash = clientIp ? hashIp(clientIp) : 'anonymous'
   try {
@@ -133,16 +205,21 @@ export async function recordOtpAttempt(
     payload.logger.warn({ err }, 'Failed to persist otpEvent')
   }
 
-  // Lazily run background cleanup if interval passed
-  if (now - lastCleanupAt > CLEANUP_INTERVAL_MS) {
-    lastCleanupAt = now
-    void cleanupOldOtpEvents(payload)
+  const now = Date.now()
+  if (!isDbCleanupRunning && now - lastDbCleanupAt >= CLEANUP_INTERVAL_MS) {
+    isDbCleanupRunning = true
+    lastDbCleanupAt = now
+    void cleanupOldOtpEvents(payload).finally(() => {
+      isDbCleanupRunning = false
+    })
   }
 }
 
 /**
- * Background retention/pruning policy.
+ * Background retention/pruning policy for database records.
  * Deletes otpEvents older than 24 hours to prevent unbounded table growth.
+ *
+ * @param payload - Payload CMS instance.
  */
 export async function cleanupOldOtpEvents(payload: Payload): Promise<void> {
   try {
@@ -159,4 +236,32 @@ export async function cleanupOldOtpEvents(payload: Payload): Promise<void> {
   } catch (err) {
     payload.logger.warn({ err }, 'Failed to clean up old otpEvents')
   }
+}
+
+/**
+ * Returns diagnostic size counts for in-memory rate limiting structures.
+ *
+ * @returns Map size counts for phone timestamps, IP timestamps, and cooldowns.
+ */
+export function getRateLimiterMemoryStats(): {
+  phones: number
+  ips: number
+  cooldowns: number
+} {
+  return {
+    phones: phoneTimestamps.size,
+    ips: ipTimestamps.size,
+    cooldowns: phoneCooldowns.size,
+  }
+}
+
+/**
+ * Resets all in-memory rate limiter structures. Useful for test isolation.
+ */
+export function resetRateLimiterMemory(): void {
+  phoneTimestamps.clear()
+  ipTimestamps.clear()
+  phoneCooldowns.clear()
+  lastCleanupAt = 0
+  lastDbCleanupAt = 0
 }

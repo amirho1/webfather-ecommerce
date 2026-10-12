@@ -1,59 +1,43 @@
-import { randomInt } from 'node:crypto';
-import { hashOtp, matchesOtp, otpLifetimeMs } from './otp';
+import { randomInt } from 'node:crypto'
+import { hashOtp, otpLifetimeMs } from './otp'
+import getPendingOtpStore, { type PendingOtpStore } from './pendingOtpStore'
 
-export interface PendingOtpEntry {
-  hash: string
-  expiresAt: number
-  attempts: number
-  createdAt: number
-}
-
-// In-memory pending OTP registry with independent storage
-const pendingOtps = new Map<string, PendingOtpEntry>()
-
-export function generateAndStoreOtp(phone: string): { code: string; expiresAt: number } {
-  const code = String(randomInt(100000, 1000000))
-  const now = Date.now()
-  const expiresAt = now + otpLifetimeMs
-
-  pendingOtps.set(phone, {
-    hash: hashOtp(phone, code),
-    expiresAt,
-    attempts: 0,
-    createdAt: now,
-  })
-
+/** Persists only a phone-bound OTP hash with a 120-second Redis TTL. */
+export async function storePendingOtp(
+  phone: string,
+  code: string,
+  store: PendingOtpStore = getPendingOtpStore(),
+): Promise<{ code: string; expiresAt: number }> {
+  const expiresAt = Date.now() + otpLifetimeMs
+  await store.save(phone, hashOtp(phone, code))
   return { code, expiresAt }
 }
 
-export function verifyPendingOtp(phone: string, code: string): { valid: boolean; error?: string } {
-  const entry = pendingOtps.get(phone)
-  const now = Date.now()
-
-  if (!entry) {
-    return { valid: false, error: 'کد نامعتبر یا منقضی شده است.' }
-  }
-
-  if (now > entry.expiresAt) {
-    pendingOtps.delete(phone)
-    return { valid: false, error: 'کد منقضی شده است.' }
-  }
-
-  if (entry.attempts >= 5) {
-    pendingOtps.delete(phone)
-    return { valid: false, error: 'تعداد دفعات تلاش بیش از حد مجاز است.' }
-  }
-
-  if (!matchesOtp(phone, code, entry.hash)) {
-    entry.attempts += 1
-    return { valid: false, error: 'کد نامعتبر است.' }
-  }
-
-  // Valid OTP, consume it
-  pendingOtps.delete(phone)
-  return { valid: true }
+/** Generates and persists a six-digit code for the recipient. */
+export async function generateAndStoreOtp(
+  phone: string,
+  store: PendingOtpStore = getPendingOtpStore(),
+): Promise<{ code: string; expiresAt: number }> {
+  return storePendingOtp(phone, String(randomInt(100000, 1000000)), store)
 }
 
-export function clearPendingOtp(phone: string): void {
-  pendingOtps.delete(phone)
+/** Atomically checks a code, tracks failures, and consumes successful codes. */
+export async function verifyPendingOtp(
+  phone: string,
+  code: string,
+  store: PendingOtpStore = getPendingOtpStore(),
+): Promise<{ valid: boolean; error?: string }> {
+  const result = await store.verify(phone, hashOtp(phone, code))
+  if (result === 'valid') return { valid: true }
+  if (result === 'tooMany') return { valid: false, error: 'تعداد دفعات تلاش بیش از حد مجاز است.' }
+  if (result === 'invalid') return { valid: false, error: 'کد نامعتبر است.' }
+  return { valid: false, error: 'کد نامعتبر یا منقضی شده است.' }
+}
+
+/** Removes an undelivered code after SMS dispatch fails. */
+export async function clearPendingOtp(
+  phone: string,
+  store: PendingOtpStore = getPendingOtpStore(),
+): Promise<void> {
+  await store.clear(phone)
 }

@@ -1,15 +1,24 @@
-import { isIranianMobile, normalizeDigits, normalizePhone } from '@/lib/auth/mobileSession';
-import { checkRateLimit, extractClientIp } from '@/lib/auth/otpRateLimiter';
-import { generateAndStoreOtp, verifyPendingOtp } from '@/lib/auth/otpService';
-import { ConsoleSmsProvider, setSmsProvider } from '@/lib/auth/sms/smsProvider';
-import { findOrCreateVerifiedMobileUser, findUserByPhone } from '@/lib/auth/userService';
-import { getCardPrice, getPrice } from '@/lib/formatToman';
-import type { Product } from '@/payload-types';
-import config from '@/payload.config';
-import { getPayload, Payload } from 'payload';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { isIranianMobile, normalizeDigits, normalizePhone } from '@/lib/auth/mobileSession'
+import {
+  checkAndReserveRateLimit,
+  cleanupExpiredRateLimits,
+  extractClientIp,
+  getRateLimiterMemoryStats,
+  logOtpAttemptToDb,
+  resetRateLimiterMemory,
+} from '@/lib/auth/otpRateLimiter'
+import { generateAndStoreOtp, verifyPendingOtp } from '@/lib/auth/otpService'
+import createMemoryPendingOtpStore from '../helpers/memoryPendingOtpStore'
+import { ConsoleSmsProvider, setSmsProvider } from '@/lib/auth/sms/smsProvider'
+import { findOrCreateVerifiedMobileUser, findUserByPhone } from '@/lib/auth/userService'
+import { getCardPrice, getPrice } from '@/lib/formatToman'
+import type { Product } from '@/payload-types'
+import config from '@/payload.config'
+import { getPayload, Payload } from 'payload'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 let payload: Payload
+const otpStore = createMemoryPendingOtpStore()
 
 describe('Storefront & Auth Core Tests', () => {
   beforeAll(async () => {
@@ -80,9 +89,33 @@ describe('Storefront & Auth Core Tests', () => {
     })
 
     it('enforces cooldown and request count', () => {
+      resetRateLimiterMemory()
       const testPhone = '09999990001'
-      const check1 = checkRateLimit(testPhone, '127.0.0.1')
+      const check1 = checkAndReserveRateLimit(testPhone, '127.0.0.1')
       expect(check1.allowed).toBe(true)
+      expect(checkAndReserveRateLimit(testPhone, '127.0.0.1').allowed).toBe(false)
+    })
+
+    it('purges expired in-memory rate limiting maps to prevent memory leaks', async () => {
+      resetRateLimiterMemory()
+      const phoneA = '09121112233'
+      const ipA = '198.51.100.50'
+
+      checkAndReserveRateLimit(phoneA, ipA)
+      await logOtpAttemptToDb(payload, phoneA, ipA)
+      const statsBefore = getRateLimiterMemoryStats()
+      expect(statsBefore.phones).toBe(1)
+      expect(statsBefore.ips).toBe(1)
+      expect(statsBefore.cooldowns).toBe(1)
+
+      // Simulate time jumping 2 hours into the future (past 60s cooldown and 1h sliding window)
+      const futureTime = Date.now() + 2 * 60 * 60 * 1000
+      cleanupExpiredRateLimits(futureTime)
+
+      const statsAfter = getRateLimiterMemoryStats()
+      expect(statsAfter.phones).toBe(0)
+      expect(statsAfter.ips).toBe(0)
+      expect(statsAfter.cooldowns).toBe(0)
     })
   })
 
@@ -90,7 +123,7 @@ describe('Storefront & Auth Core Tests', () => {
     it('generates OTP without creating ghost user in DB', async () => {
       const testPhone = `0987${String(Date.now()).slice(-7)}`
       // 1. Generate OTP
-      const { code } = generateAndStoreOtp(testPhone)
+      const { code } = await generateAndStoreOtp(testPhone, otpStore)
       expect(code).toHaveLength(6)
 
       // 2. Ensure NO user exists in database before verification
@@ -98,7 +131,7 @@ describe('Storefront & Auth Core Tests', () => {
       expect(userBefore).toBeNull()
 
       // 3. Verify OTP
-      const verifyResult = verifyPendingOtp(testPhone, code)
+      const verifyResult = await verifyPendingOtp(testPhone, code, otpStore)
       expect(verifyResult.valid).toBe(true)
 
       // 4. Create verified user only after code is verified
@@ -114,10 +147,22 @@ describe('Storefront & Auth Core Tests', () => {
       })
     })
 
-    it('rejects invalid OTP code', () => {
+    it('rejects invalid OTP code', async () => {
       const phone = `0986${String(Date.now()).slice(-7)}`
-      generateAndStoreOtp(phone)
-      const verifyResult = verifyPendingOtp(phone, '000000')
+      await generateAndStoreOtp(phone, otpStore)
+      const verifyResult = await verifyPendingOtp(phone, '000000', otpStore)
+      expect(verifyResult.valid).toBe(false)
+    })
+
+    it('cleans up abandoned expired pending OTPs from storage', async () => {
+      const abandonedPhone = '09120009988'
+      await generateAndStoreOtp(abandonedPhone, otpStore)
+      expect(otpStore.count()).toBeGreaterThan(0)
+
+      otpStore.expire(abandonedPhone)
+
+      // Verifying after expiration should report expired/invalid and not exist
+      const verifyResult = await verifyPendingOtp(abandonedPhone, '123456', otpStore)
       expect(verifyResult.valid).toBe(false)
     })
   })

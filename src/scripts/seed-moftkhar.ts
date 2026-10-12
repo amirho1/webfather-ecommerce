@@ -1,6 +1,6 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-import type { Payload, PayloadRequest } from 'payload';
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
+import type { Payload, PayloadRequest } from 'payload'
 
 const categories = [
   { slug: 'ai', title: 'هوش مصنوعی', subtitle: 'باهوش‌تر کار کن', iconKey: 'sparkles' },

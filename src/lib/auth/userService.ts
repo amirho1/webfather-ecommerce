@@ -1,6 +1,6 @@
-import type { User } from '@/payload-types';
-import { randomBytes } from 'node:crypto';
-import type { Payload } from 'payload';
+import type { User } from '@/payload-types'
+import { randomBytes } from 'node:crypto'
+import type { Payload } from 'payload'
 
 export async function findUserByPhone(payload: Payload, phone: string): Promise<User | null> {
   const result = await payload.find({

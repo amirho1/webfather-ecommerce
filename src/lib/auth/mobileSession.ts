@@ -1,5 +1,5 @@
-import jwt, { type JwtPayload } from 'jsonwebtoken';
-import type { Payload } from 'payload';
+import jwt, { type JwtPayload } from 'jsonwebtoken'
+import type { Payload } from 'payload'
 
 export const mobileCookieName = 'moftkhar-mobile'
 export const mobileSessionAge = 60 * 60 * 24 * 14

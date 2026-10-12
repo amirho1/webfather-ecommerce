@@ -1,5 +1,5 @@
-import { OtpForm } from '@/components/forms/OtpForm';
-import { Suspense, type ReactNode } from 'react';
+import { OtpForm } from '@/components/forms/OtpForm'
+import { Suspense, type ReactNode } from 'react'
 
 export interface AuthPageWrapperProps {
   title: string
@@ -13,9 +13,7 @@ export function AuthPageWrapper({ title, subtitle, children }: AuthPageWrapperPr
       <div className="auth-card">
         <h1>{title}</h1>
         <p>{subtitle}</p>
-        <Suspense fallback={null}>
-          {children || <OtpForm />}
-        </Suspense>
+        <Suspense fallback={null}>{children || <OtpForm />}</Suspense>
       </div>
     </div>
   )

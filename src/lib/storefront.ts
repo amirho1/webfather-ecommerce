@@ -1,9 +1,8 @@
-import config from '@payload-config';
-import { unstable_cache } from 'next/cache';
-import { draftMode } from 'next/headers';
-import type { Where } from 'payload';
-import { getPayload } from 'payload';
-import { getCardPrice } from './formatToman';
+import config from '@payload-config'
+import { unstable_cache } from 'next/cache'
+import { draftMode } from 'next/headers'
+import type { Where } from 'payload'
+import { getPayload } from 'payload'
 
 export type CatalogParams = { q?: string; category?: string; sort?: string; page?: string }
 
@@ -79,9 +78,14 @@ export async function getCatalog(params: CatalogParams = {}, limit = 14) {
 
   const selectedCategory = categories.find((category) => category.slug === params.category)
   const q = params.q?.trim().slice(0, 100) || ''
-  const isPriceSort = params.sort === 'low' || params.sort === 'high'
   const sort =
-    params.sort === 'name' ? 'title' : isPriceSort ? undefined : ['-featured', '-createdAt']
+    params.sort === 'name'
+      ? 'title'
+      : params.sort === 'low'
+        ? ['-hasPrice', 'sortPrice', 'id']
+        : params.sort === 'high'
+          ? ['-hasPrice', '-sortPrice', 'id']
+          : ['-featured', '-createdAt']
   const page = Math.max(1, Number.parseInt(params.page || '1', 10) || 1)
   const and: Where[] = []
 
@@ -99,23 +103,6 @@ export async function getCatalog(params: CatalogParams = {}, limit = 14) {
     sort,
     where: and.length ? { and } : undefined,
   })
-
-  // Correctly sort products with variants by their resolved card price
-  if (isPriceSort && products.docs.length > 0) {
-    products.docs.sort((a, b) => {
-      const priceA = getCardPrice(a)
-      const priceB = getCardPrice(b)
-      if (params.sort === 'low') {
-        const valA = priceA !== null ? priceA : Number.POSITIVE_INFINITY
-        const valB = priceB !== null ? priceB : Number.POSITIVE_INFINITY
-        return valA - valB
-      } else {
-        const valA = priceA !== null ? priceA : Number.NEGATIVE_INFINITY
-        const valB = priceB !== null ? priceB : Number.NEGATIVE_INFINITY
-        return valB - valA
-      }
-    })
-  }
 
   return { products, categories, selectedCategory, draft }
 }

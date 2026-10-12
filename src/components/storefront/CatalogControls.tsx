@@ -1,9 +1,9 @@
 'use client'
 
-import type { Category } from '@/payload-types';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState, useTransition } from 'react';
+import type { Category } from '@/payload-types'
+import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useState, useTransition } from 'react'
 
 export function CatalogControls({ categories }: { categories: Category[] }) {
   const router = useRouter()

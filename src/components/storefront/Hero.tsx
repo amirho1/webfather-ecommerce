@@ -1,17 +1,17 @@
-import type { Product } from '@/payload-types';
+import type { Product } from '@/payload-types'
 import {
-    ArrowLeft,
-    ArrowUpLeft,
-    Asterisk,
-    BadgeCheck,
-    Headphones,
-    ShoppingBag,
-    Sparkle,
-    Sparkles,
-} from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { ProductLogo } from './Brand';
+  ArrowLeft,
+  ArrowUpLeft,
+  Asterisk,
+  BadgeCheck,
+  Headphones,
+  ShoppingBag,
+  Sparkle,
+  Sparkles,
+} from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { ProductLogo } from './Brand'
 
 const floatPositions = ['float-gemini', 'float-notion', 'float-lovable', 'float-capcut']
 

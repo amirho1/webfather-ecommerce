@@ -1,5 +1,5 @@
-import type { Product } from '@/payload-types';
-import { ProductLogo } from './Brand';
+import type { Product } from '@/payload-types'
+import { ProductLogo } from './Brand'
 
 export function BrandStrip({ brands }: { brands: Product[] }) {
   return (

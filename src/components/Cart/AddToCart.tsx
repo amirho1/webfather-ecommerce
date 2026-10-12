@@ -1,11 +1,11 @@
 'use client'
 
-import { Button } from '@/components/ui/button';
-import { useAddToCart } from '@/hooks/useAddToCart';
-import type { Product, Variant } from '@/payload-types';
-import clsx from 'clsx';
-import { useSearchParams } from 'next/navigation';
-import React, { useCallback, useMemo } from 'react';
+import { Button } from '@/components/ui/button'
+import { useAddToCart } from '@/hooks/useAddToCart'
+import type { Product, Variant } from '@/payload-types'
+import clsx from 'clsx'
+import { useSearchParams } from 'next/navigation'
+import React, { useCallback, useMemo } from 'react'
 
 type Props = {
   product: Product

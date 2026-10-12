@@ -26,7 +26,7 @@ The OTP authentication system replaces traditional email/password registration f
 | Property | Value | Description |
 | :--- | :--- | :--- |
 | **Code Length** | **6 characters (6 digits)** | Generated in the numeric range `100000` to `999999` |
-| **Code Lifetime (`otpLifetimeMs`)** | **5 minutes (300,000 ms)** | Window within which the OTP must be verified |
+| **Code Lifetime (`otpLifetimeMs`)** | **2 minutes (120,000 ms)** | Window within which the OTP must be verified |
 | **Resend Cooldown (`OTP_COOLDOWN_MS`)** | **60 seconds (60,000 ms)** | Minimum time required before requesting a new code |
 | **Max Verification Attempts** | **5 attempts** | Code is invalidated immediately upon 5 incorrect submissions |
 | **Rate Limit (per Phone)** | **5 requests / 1 hour** | Sliding window rate limit per normalized phone number |
@@ -110,8 +110,8 @@ export function isIranianMobile(value: string): boolean {
 Earlier designs created provisional records in the database `users` collection when an OTP was requested. This caused database bloat and ghost accounts from failed or automated requests.
 
 In the current architecture:
-1. Pending OTPs are maintained exclusively in an **in-memory pending registry** (`pendingOtps`).
-2. Plaintext codes are **never** stored in memory; only `hashOtp(phone, code)` (HMAC-SHA256) is kept.
+1. Pending OTPs are stored in Redis under `otp:pending:<phone>` with a 120-second TTL.
+2. Plaintext codes are **never** stored; only `hashOtp(phone, code)` (HMAC-SHA256) is persisted.
 3. The database `users` record is **only created or updated after** the 6-digit code is successfully validated.
 
 ---
@@ -240,21 +240,31 @@ Terminates the mobile session and clears the authentication cookie.
 The service uses a provider abstraction (`SmsProvider` interface) defined in [`src/lib/auth/sms/smsProvider.ts`](file:///Users/amirho/Projects/moftkhar/src/lib/auth/sms/smsProvider.ts):
 
 ```typescript
+export interface SmsSendResult {
+  code?: string
+}
+
 export interface SmsProvider {
-  sendOtp(phone: string, code: string): Promise<void>
+  sendOtp(phone: string, code?: string): Promise<SmsSendResult | void>
 }
 ```
 
 ### Available Providers
 
-1. **`MelipayamakSmsProvider` (Production)**:
-   - Uses Melipayamak's REST API endpoint `https://rest.payamak-panel.com/api/SendSMS/SendOtp`.
-   - Transmits via URL-encoded form data using approved shared service lines that bypass advertising blacklists.
-   - For complete Melipayamak API details and error codes, see [`docs/melipayamak.md`](file:///Users/amirho/Projects/moftkhar/docs/melipayamak.md).
+1. **`MelipayamakConsoleSmsProvider` (Primary Production Provider)**:
+   - Uses Melipayamak's modern REST API endpoint `https://console.melipayamak.com/api/send/otp/<TOKEN>`.
+   - Authenticates using `MELIPAYAMAK_JWT`.
+   - Supports server-delivered dynamic OTP codes, returning the code to the caller so verification hashes stay in sync.
+   - For complete details, see [`docs/melipayamak.md`](file:///Users/amirho/Projects/moftkhar/docs/melipayamak.md).
 
-2. **`ConsoleSmsProvider` (Development & Testing)**:
-   - Activated automatically when Melipayamak environment variables are not set.
-   - Safely prints the 6-digit OTP code to server console logs:
+2. **`MelipayamakSmsProvider` (Legacy Production Provider)**:
+   - Uses Melipayamak's panel REST API endpoint `https://rest.payamak-panel.com/api/SendSMS/SendOtp`.
+   - Transmits via URL-encoded form data using approved shared service lines that bypass advertising blacklists.
+   - Enabled when `MELIPAYAMAK_USERNAME`, `MELIPAYAMAK_CREDENTIAL`, and `MELIPAYAMAK_FROM` are configured.
+
+3. **`ConsoleSmsProvider` (Development & Testing Mock)**:
+   - Activated automatically when no Melipayamak environment variables are set.
+   - Safely prints the OTP code to server console logs:
      ```
      [SMS MOCK] Sent OTP code "482019" to phone "09123456789"
      ```
@@ -269,9 +279,15 @@ Configure the following variables in your `.env` or deployment environment:
 # Payload Application Secret (Required for HMAC-SHA256 OTP hashing & JWT signing)
 PAYLOAD_SECRET=your-32-character-random-secret
 
-# Melipayamak SMS Gateway (Leave empty in local dev to use console mock)
+# Primary: Melipayamak Console Token / JWT
+MELIPAYAMAK_JWT=your_console_token_here
+
+# Optional: Verified test phone number for test suite
+TEST_PHONE_NUMBER=09012027369
+
+# Legacy Melipayamak Fallback (Used only when MELIPAYAMAK_JWT is omitted)
 MELIPAYAMAK_USERNAME=your_username
-MELIPAYAMAK_CREDENTIAL=your_password_or_token
+MELIPAYAMAK_CREDENTIAL=your_password
 MELIPAYAMAK_FROM=your_approved_sender_line
 ```
 

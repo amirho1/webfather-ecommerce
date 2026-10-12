@@ -1,9 +1,9 @@
 'use client'
 
-import type { Product, Variant } from '@/payload-types';
-import { useCart } from '@payloadcms/plugin-ecommerce/client/react';
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
+import type { Product, Variant } from '@/payload-types'
+import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
+import { useCallback, useState } from 'react'
+import { toast } from 'sonner'
 
 export const ADD_TO_CART_SUCCESS_MESSAGE = 'به سبد خرید اضافه شد.'
 export const ADD_TO_CART_ERROR_MESSAGE = 'افزودن به سبد خرید ممکن نشد.'

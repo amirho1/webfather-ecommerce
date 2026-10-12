@@ -1,11 +1,11 @@
 'use client'
 
-import { useAddToCart } from '@/hooks/useAddToCart';
-import { getPrice } from '@/lib/formatToman';
-import type { Product } from '@/payload-types';
-import { ArrowUpLeft, Plus } from 'lucide-react';
-import Link from 'next/link';
-import { ProductLogo } from './Brand';
+import { useAddToCart } from '@/hooks/useAddToCart'
+import { getPrice } from '@/lib/formatToman'
+import type { Product } from '@/payload-types'
+import { ArrowUpLeft, Plus } from 'lucide-react'
+import Link from 'next/link'
+import { ProductLogo } from './Brand'
 
 export function FeaturedCard({ product, index }: { product: Product; index: number }) {
   const { addToCart, canAddToCart, isLoading } = useAddToCart()

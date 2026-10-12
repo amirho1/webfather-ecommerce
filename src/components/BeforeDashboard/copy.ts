@@ -7,7 +7,8 @@ export const adminCopy = {
     seededOutro: ' after publishing to see the results.',
     stripeIntro: 'Go to ',
     stripeLink: 'Stripe to get your API keys',
-    stripeOutro: '. Create an account if needed, add the keys to your environment variables, and restart the server. See the ',
+    stripeOutro:
+      '. Create an account if needed, add the keys to your environment variables, and restart the server. See the ',
     readme: 'README',
     readmeOutro: ' for details.',
     modifyIntro: 'Update your ',
@@ -45,7 +46,8 @@ export const adminCopy = {
     seededOutro: ' تا نتیجه را ببینید.',
     stripeIntro: 'به ',
     stripeLink: 'Stripe بروید و کلیدهای API را دریافت کنید',
-    stripeOutro: '. در صورت نیاز حساب بسازید، کلیدها را در متغیرهای محیطی قرار دهید و سرور را دوباره اجرا کنید. برای جزئیات، ',
+    stripeOutro:
+      '. در صورت نیاز حساب بسازید، کلیدها را در متغیرهای محیطی قرار دهید و سرور را دوباره اجرا کنید. برای جزئیات، ',
     readme: 'README',
     readmeOutro: ' را ببینید.',
     modifyIntro: 'در صورت نیاز ',
@@ -79,5 +81,4 @@ export const adminCopy = {
 
 export type AdminLanguage = keyof typeof adminCopy
 
-export const getAdminCopy = (language: string) =>
-  adminCopy[language === 'fa' ? 'fa' : 'en']
+export const getAdminCopy = (language: string) => adminCopy[language === 'fa' ? 'fa' : 'en']

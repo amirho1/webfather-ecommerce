@@ -1,6 +1,6 @@
-import type { Category } from '@/payload-types';
-import { ArrowLeft, Code2, GraduationCap, LayoutGrid, Palette, Sparkles } from 'lucide-react';
-import Link from 'next/link';
+import type { Category } from '@/payload-types'
+import { ArrowLeft, Code2, GraduationCap, LayoutGrid, Palette, Sparkles } from 'lucide-react'
+import Link from 'next/link'
 
 const icons = {
   sparkles: Sparkles,

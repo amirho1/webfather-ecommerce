@@ -1,7 +1,7 @@
-import type { Product } from '@/payload-types';
-import { ArrowLeft, Sparkles } from 'lucide-react';
-import Link from 'next/link';
-import { FeaturedCard } from './FeaturedCard';
+import type { Product } from '@/payload-types'
+import { ArrowLeft, Sparkles } from 'lucide-react'
+import Link from 'next/link'
+import { FeaturedCard } from './FeaturedCard'
 
 export function Featured({ products }: { products: Product[] }) {
   if (!products.length) return null

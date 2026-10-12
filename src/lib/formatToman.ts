@@ -1,4 +1,4 @@
-import type { Product, Variant } from '@/payload-types';
+import type { Product, Variant } from '@/payload-types'
 
 export const formatNumber = (value: number) => new Intl.NumberFormat('fa-IR').format(value)
 export const formatToman = (value: number) => `${formatNumber(value)} تومان`

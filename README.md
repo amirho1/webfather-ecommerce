@@ -376,10 +376,12 @@ export default buildConfig({
 ### Self-hosting
 
 For self-hosting on a VPS with Dokploy or Docker Compose, see the complete guide in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Additional guides are available in:
+
 - [docs/OTP_SERVICE.md](docs/OTP_SERVICE.md) — Mobile OTP authentication architecture and security specification
 - [docs/melipayamak.md](docs/melipayamak.md) — Melipayamak SMS gateway integration and error code reference
 
 It covers:
+
 - Dokploy Git-backed Compose setup with automatic SSL/TLS
 - Persistent volume management for SQLite and media uploads
 - Server environment variables and Melipayamak SMS OTP configuration

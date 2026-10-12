@@ -1,18 +1,19 @@
-import { ecommercePlugin } from '@payloadcms/plugin-ecommerce';
-import { formBuilderPlugin } from '@payloadcms/plugin-form-builder';
-import { seoPlugin } from '@payloadcms/plugin-seo';
-import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types';
-import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical';
-import { Plugin, type CollectionConfig } from 'payload';
+import { ecommercePlugin } from '@payloadcms/plugin-ecommerce'
+import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
+import { seoPlugin } from '@payloadcms/plugin-seo'
+import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
+import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
+import { Plugin, type CollectionConfig } from 'payload'
 
-import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess';
-import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus';
-import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess';
-import { isAdmin } from '@/access/isAdmin';
-import { isDocumentOwner } from '@/access/isDocumentOwner';
-import { ProductsCollection } from '@/collections/Products';
-import { Page, Product } from '@/payload-types';
-import { getServerSideURL } from '@/utilities/getURL';
+import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
+import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
+import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
+import { isAdmin } from '@/access/isAdmin'
+import { isDocumentOwner } from '@/access/isDocumentOwner'
+import { ProductsCollection } from '@/collections/Products'
+import withSortPriceHooks from '@/collections/Variants/withSortPriceHooks'
+import { Page, Product } from '@/payload-types'
+import { getServerSideURL } from '@/utilities/getURL'
 
 const localizeCollection = (
   collection: CollectionConfig,
@@ -193,14 +194,16 @@ export const plugins: Plugin[] = [
       productsCollectionOverride: ProductsCollection,
       variants: {
         variantsCollectionOverride: ({ defaultCollection }) =>
-          localizeCollection(
-            defaultCollection,
-            'Variant',
-            'Variants',
-            'گونه',
-            'گونه‌ها',
-            'Ecommerce',
-            'فروشگاه',
+          withSortPriceHooks(
+            localizeCollection(
+              defaultCollection,
+              'Variant',
+              'Variants',
+              'گونه',
+              'گونه‌ها',
+              'Ecommerce',
+              'فروشگاه',
+            ),
           ),
         variantOptionsCollectionOverride: ({ defaultCollection }) =>
           localizeCollection(

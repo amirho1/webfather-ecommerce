@@ -19,6 +19,7 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 import { DefaultDocumentIDType, Where } from 'payload'
+import refreshProductSortPrice from '@/lib/refreshProductSortPrice'
 
 export const ProductsCollection: CollectionOverride = ({ defaultCollection }) => ({
   ...defaultCollection,
@@ -55,6 +56,8 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     enableVariants: true,
     gallery: true,
     priceInTOMAN: true,
+    sortPrice: true,
+    hasPrice: true,
     brandLogo: true,
     badgeColor: true,
     shortDescription: true,
@@ -63,11 +66,36 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     meta: true,
   },
   fields: [
+    { name: 'sortPrice', type: 'number', index: true, admin: { hidden: true } },
+    { name: 'hasPrice', type: 'checkbox', index: true, admin: { hidden: true } },
     { name: 'title', type: 'text', label: { en: 'Title', fa: 'عنوان' }, required: true },
-    { name: 'shortDescription', type: 'textarea', label: { en: 'Short description', fa: 'توضیح کوتاه' } },
-    { name: 'brandLogo', type: 'upload', relationTo: 'media', label: { en: 'Brand logo', fa: 'لوگوی برند' } },
-    { name: 'badgeColor', type: 'text', defaultValue: '#f1f4ff', label: { en: 'Badge color', fa: 'رنگ نشان' }, validate: (value: unknown) => !value || (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value)) || 'Use a six-digit hex color.' },
-    { name: 'featured', type: 'checkbox', defaultValue: false, label: { en: 'Featured', fa: 'محبوب' } },
+    {
+      name: 'shortDescription',
+      type: 'textarea',
+      label: { en: 'Short description', fa: 'توضیح کوتاه' },
+    },
+    {
+      name: 'brandLogo',
+      type: 'upload',
+      relationTo: 'media',
+      label: { en: 'Brand logo', fa: 'لوگوی برند' },
+    },
+    {
+      name: 'badgeColor',
+      type: 'text',
+      defaultValue: '#f1f4ff',
+      label: { en: 'Badge color', fa: 'رنگ نشان' },
+      validate: (value: unknown) =>
+        !value ||
+        (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value)) ||
+        'Use a six-digit hex color.',
+    },
+    {
+      name: 'featured',
+      type: 'checkbox',
+      defaultValue: false,
+      label: { en: 'Featured', fa: 'محبوب' },
+    },
     {
       type: 'tabs',
       tabs: [
@@ -231,4 +259,14 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
       }),
     }),
   ],
+  hooks: {
+    ...defaultCollection.hooks,
+    afterChange: [
+      ...(defaultCollection.hooks?.afterChange ?? []),
+      async ({ doc, req, context }) => {
+        if (!context.skipSortPriceRefresh) await refreshProductSortPrice(req, doc.id)
+        return doc
+      },
+    ],
+  },
 })

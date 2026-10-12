@@ -288,6 +288,8 @@ export interface Order {
  */
 export interface Product {
   id: number;
+  sortPrice?: number | null;
+  hasPrice?: boolean | null;
   title: string;
   shortDescription?: string | null;
   brandLogo?: (number | null) | Media;
@@ -1656,6 +1658,8 @@ export interface VariantOptionsSelect<T extends boolean = true> {
  * via the `definition` "products_select".
  */
 export interface ProductsSelect<T extends boolean = true> {
+  sortPrice?: T;
+  hasPrice?: T;
   title?: T;
   shortDescription?: T;
   brandLogo?: T;

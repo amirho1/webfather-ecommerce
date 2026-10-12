@@ -1,11 +1,11 @@
 'use client'
 
-import { useAddToCart } from '@/hooks/useAddToCart';
-import { formatNumber, getCardPrice } from '@/lib/formatToman';
-import type { Product } from '@/payload-types';
-import { Check, Plus, ShoppingBag } from 'lucide-react';
-import Link from 'next/link';
-import { ProductLogo } from './Brand';
+import { useAddToCart } from '@/hooks/useAddToCart'
+import { formatNumber, getCardPrice } from '@/lib/formatToman'
+import type { Product } from '@/payload-types'
+import { Check, Plus, ShoppingBag } from 'lucide-react'
+import Link from 'next/link'
+import { ProductLogo } from './Brand'
 
 export function ProductCard({ product }: { product: Product }) {
   const { addToCart, getProductQuantityInCart, isLoading } = useAddToCart()
@@ -18,7 +18,9 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="product-card">
       <div className="product-card-top">
-        <span className="category-label">{category && typeof category === 'object' ? category.title : 'اشتراک'}</span>
+        <span className="category-label">
+          {category && typeof category === 'object' ? category.title : 'اشتراک'}
+        </span>
         <span className="plan-label">اشتراک</span>
       </div>
       <Link href={`/products/${product.slug}`} className="product-identity">

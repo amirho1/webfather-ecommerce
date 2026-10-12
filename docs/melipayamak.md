@@ -8,10 +8,10 @@ This document provides a technical guide to integrating and operating **Melipaya
 
 1. [Overview](#overview)
 2. [OTP Code Length & Generation](#otp-code-length--generation)
-3. [Method 1: Payamak-Panel REST API (Primary Implementation)](#method-1-payamak-panel-rest-api-primary-implementation)
-4. [Method 2: Console Token API (Alternative)](#method-2-console-token-api-alternative)
+3. [Method 1: Console Token / JWT API (Modern & Primary Implementation)](#method-1-console-token--jwt-api-modern--primary-implementation)
+4. [Method 2: Payamak-Panel REST API (Legacy Alternative)](#method-2-payamak-panel-rest-api-legacy-alternative)
 5. [Carrier Blacklist Bypassing](#carrier-blacklist-bypassing)
-6. [Melipayamak Error Codes Reference](#melipayamak-error-codes-reference)
+6. [Melipayamak Error Codes & Status Reference](#melipayamak-error-codes--status-reference)
 7. [Environment Configuration & Mocking](#environment-configuration--mocking)
 
 ---
@@ -21,24 +21,109 @@ This document provides a technical guide to integrating and operating **Melipaya
 [Melipayamak](https://www.melipayamak.com) is an Iranian SMS delivery provider. In Moftkhar, Melipayamak delivers one-time verification passwords (OTP) to customer mobile phones during storefront login and registration.
 
 The service provides two primary integration models:
-1. **Payamak-Panel REST API (`SendOtp`)**: The server generates the OTP code and forwards it to Melipayamak for immediate delivery via high-priority service lines. **This is the active method used by Moftkhar's [`MelipayamakSmsProvider`](file:///Users/amirho/Projects/moftkhar/src/lib/auth/sms/smsProvider.ts).**
-2. **Console Token API (`send/otp/<TOKEN>`)**: A token-authenticated API where Melipayamak generates the code and returns it in the API response.
+1. **Console Token / JWT API (`send/otp/<TOKEN>`)**: A modern, token-authenticated REST API where Melipayamak sends the OTP code via pre-approved service patterns. **This is the primary method used by Moftkhar's [`MelipayamakConsoleSmsProvider`](file:///Users/amirho/Projects/moftkhar/src/lib/auth/sms/melipayamakConsoleSmsProvider.ts), configured via `MELIPAYAMAK_JWT`.**
+2. **Payamak-Panel REST API (`SendOtp`)**: The server generates the OTP code and forwards it to Melipayamak's legacy panel endpoint using username and password credentials. Supported by [`MelipayamakSmsProvider`](file:///Users/amirho/Projects/moftkhar/src/lib/auth/sms/smsProvider.ts).
 
 ---
 
 ## OTP Code Length & Generation
 
 In the Moftkhar application:
-- **Code Length**: The OTP code is **exactly 6 characters long** (6 decimal digits).
-- **Format**: Numeric string in the range `100000` to `999999` matching `/^[0-9]{6}$/`.
-- **Generation**: Generated on the application server using Node.js cryptographically secure random integers (`randomInt(100000, 1000000)`).
-- **Delivery**: The 6-digit code is passed directly to Melipayamak's `SendOtp` endpoint.
+- **Code Length**: The OTP code is **4 to 8 digits long** (default generated code is **6 digits** in the range `100000` to `999999`).
+- **Dynamic Delivery**: When using the modern Console Token API, Melipayamak may generate the code according to the panel's template settings and return it in the API response (`{ "code": "...", "status": "..." }`). Moftkhar dynamically updates the in-memory HMAC registry with the delivered code so verification succeeds seamlessly.
+- **Timing-Safe Verification**: Submitted OTP codes are verified against the HMAC-SHA256 signature using `node:crypto.timingSafeEqual`.
 
 ---
 
-## Method 1: Payamak-Panel REST API (Primary Implementation)
+## Method 1: Console Token / JWT API (Modern & Primary Implementation)
 
-The Moftkhar backend calls Melipayamak's `SendOtp` REST endpoint from [`src/lib/auth/sms/smsProvider.ts`](file:///Users/amirho/Projects/moftkhar/src/lib/auth/sms/smsProvider.ts).
+The Moftkhar backend calls Melipayamak's modern Console Token REST endpoint via [`MelipayamakConsoleSmsProvider`](file:///Users/amirho/Projects/moftkhar/src/lib/auth/sms/melipayamakConsoleSmsProvider.ts).
+
+### Endpoint Specification
+
+- **URL**: `https://console.melipayamak.com/api/send/otp/<TOKEN>`
+- **Method**: `POST`
+- **Content-Type**: `application/json`
+- **Timeout**: 10 seconds (`AbortSignal.timeout(10000)`)
+- **Authentication**: `MELIPAYAMAK_JWT` embedded directly in the URL path.
+
+### Request Body
+
+```json
+{
+  "to": "09123456789"
+}
+```
+
+### Response Body
+
+#### Success Response
+```json
+{
+  "code": "849201",
+  "status": "عملیات موفق"
+}
+```
+
+#### Pending Panel Approval Response
+```json
+{
+  "status": "مستلزم تنظیم و تأیید مدیر"
+}
+```
+> [!WARNING]
+> If Melipayamak returns `مستلزم تنظیم و تأیید مدیر`, the OTP application / pattern in your [Melipayamak Console](https://console.melipayamak.com/apps/otp) must be configured and approved by Melipayamak administration before live dispatch is enabled.
+
+#### Invalid Token Response
+```json
+{
+  "status": "کلید کنسول معتبر نیست"
+}
+```
+
+### Production Implementation (TypeScript / Next.js)
+
+```typescript
+// src/lib/auth/sms/melipayamakConsoleSmsProvider.ts
+export default class MelipayamakConsoleSmsProvider implements SmsProvider {
+  private readonly jwt?: string
+  private readonly endpoint: string
+
+  constructor(options?: MelipayamakConsoleOptions) {
+    this.jwt = options?.jwt ?? options?.token ?? process.env.MELIPAYAMAK_JWT
+    this.endpoint = options?.endpoint ?? 'https://console.melipayamak.com/api/send/otp'
+  }
+
+  async sendOtp(phone: string, code?: string): Promise<SmsSendResult> {
+    if (!this.jwt) throw new Error('Melipayamak JWT is not configured')
+
+    const url = `${this.endpoint.replace(/\/+$/, '')}/${encodeURIComponent(this.jwt.trim())}`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: phone }),
+      signal: AbortSignal.timeout(10000),
+      cache: 'no-store',
+    })
+
+    const raw = await response.text()
+    const record = JSON.parse(raw)
+    const statusStr = typeof record?.status === 'string' ? record.status.trim() : ''
+
+    if (!response.ok || /(معتبر نیست|مستلزم|ارسال نشده|خطا)/i.test(statusStr)) {
+      throw new Error(`Melipayamak rejected OTP: ${statusStr}`)
+    }
+
+    return { code: record.code ? String(record.code).trim() : code }
+  }
+}
+```
+
+---
+
+## Method 2: Payamak-Panel REST API (Legacy Alternative)
+
+The Moftkhar backend also maintains backward compatibility with Melipayamak's legacy `SendOtp` REST endpoint from [`src/lib/auth/sms/smsProvider.ts`](file:///Users/amirho/Projects/moftkhar/src/lib/auth/sms/smsProvider.ts).
 
 ### Endpoint Specification
 
@@ -55,183 +140,7 @@ The Moftkhar backend calls Melipayamak's `SendOtp` REST endpoint from [`src/lib/
 | `password` | String | Yes | Account password or panel credential (`MELIPAYAMAK_CREDENTIAL`) |
 | `from` | String | Yes | Approved sender service line number (`MELIPAYAMAK_FROM`) |
 | `to` | String | Yes | Destination Iranian mobile number (e.g. `09123456789`) |
-| `code` | String | Yes | The **6-character numeric OTP code** to deliver (e.g. `384920`) |
-
-### Response Format
-
-Melipayamak returns a response representing either a delivery tracking ID or a status code:
-
-- **Success**: Returns a unique numeric Message ID (`recId`) greater than 111 (e.g., `1234567890`), either as a raw string/number or JSON:
-  ```json
-  {
-    "Value": "1234567890",
-    "RetStatus": 1,
-    "StrRetStatus": "Ok"
-  }
-  ```
-- **Error / Rejection**: Returns an error integer less than or equal to `111` (e.g., `0`, `2`, `10`).
-
-### Production Implementation (TypeScript / Next.js)
-
-```typescript
-// src/lib/auth/sms/smsProvider.ts
-export class MelipayamakSmsProvider implements SmsProvider {
-  private username?: string
-  private password?: string
-  private from?: string
-
-  constructor(options?: { username?: string; password?: string; from?: string }) {
-    this.username = options?.username ?? process.env.MELIPAYAMAK_USERNAME
-    this.password = options?.password ?? process.env.MELIPAYAMAK_CREDENTIAL
-    this.from = options?.from ?? process.env.MELIPAYAMAK_FROM
-  }
-
-  async sendOtp(phone: string, code: string): Promise<void> {
-    if (!this.username || !this.password || !this.from) {
-      throw new Error('Melipayamak is not configured')
-    }
-
-    const body = new URLSearchParams({
-      username: this.username,
-      password: this.password,
-      from: this.from,
-      to: phone,
-      code, // Exactly 6 digits
-    })
-
-    const response = await fetch('https://rest.payamak-panel.com/api/SendSMS/SendOtp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
-      signal: AbortSignal.timeout(10000),
-      cache: 'no-store',
-    })
-
-    if (!response.ok) {
-      throw new Error(`Melipayamak HTTP ${response.status}`)
-    }
-
-    const raw = await response.text()
-    let result: unknown = raw
-    try {
-      result = JSON.parse(raw)
-    } catch {
-      // Melipayamak may return a plain numeric ID string
-    }
-
-    const record = result && typeof result === 'object' ? (result as Record<string, unknown>) : null
-    const value = record
-      ? (record.ReturnValue ?? record.returnValue ?? record.Value ?? record.value)
-      : result
-    const recId = Number(value)
-
-    if (!Number.isFinite(recId) || recId <= 111) {
-      throw new Error(`Melipayamak rejected OTP: ${String(value).slice(0, 32)}`)
-    }
-  }
-}
-```
-
-### cURL Example
-
-```bash
-curl -X POST "https://rest.payamak-panel.com/api/SendSMS/SendOtp" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=YOUR_USERNAME" \
-  -d "password=YOUR_PASSWORD" \
-  -d "from=YOUR_SENDER_LINE" \
-  -d "to=09123456789" \
-  -d "code=384920"
-```
-
----
-
-## Method 2: Console Token API (Alternative)
-
-Melipayamak also offers a token-based endpoint through its modern console API (`console.melipayamak.com`). In this variant, authentication occurs via an API token in the URL path, and the OTP code is generated by Melipayamak.
-
-### Endpoint Specification
-
-- **URL**: `https://console.melipayamak.com/api/send/otp/<TOKEN>`
-- **Method**: `POST`
-- **Content-Type**: `application/json`
-
-### Request Body
-
-```json
-{
-  "to": "09123456789"
-}
-```
-
-### Response Body
-
-```json
-{
-  "code": "3741437414",
-  "status": "Success description or error message"
-}
-```
-
-### Code Example (Modern Fetch)
-
-```javascript
-async function sendConsoleOtp(token, recipientPhone) {
-  const response = await fetch(`https://console.melipayamak.com/api/send/otp/${token}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      to: recipientPhone,
-    }),
-  })
-
-  const data = await response.json()
-  return data
-}
-```
-
-### Code Example (Node.js `https` module)
-
-```javascript
-const https = require('node:https')
-
-const data = JSON.stringify({
-  to: '09123456789',
-})
-
-const options = {
-  hostname: 'console.melipayamak.com',
-  port: 443,
-  path: '/api/send/otp/YOUR_TOKEN_HERE',
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Content-Length': Buffer.byteLength(data),
-  },
-}
-
-const req = https.request(options, (res) => {
-  let responseBody = ''
-
-  res.on('data', (chunk) => {
-    responseBody += chunk
-  })
-
-  res.on('end', () => {
-    console.log('Status code:', res.statusCode)
-    console.log('Response body:', responseBody)
-  })
-})
-
-req.on('error', (err) => {
-  console.error('Request error:', err)
-})
-
-req.write(data)
-req.end()
-```
+| `code` | String | Yes | The numeric OTP code to deliver (e.g. `384920`) |
 
 ---
 
@@ -240,13 +149,23 @@ req.end()
 A large portion of Iranian mobile subscribers disable promotional SMS messages (known as Telecom Blacklist 8989 / لیست سیاه مخابراتی).
 
 Standard promotional lines (e.g. `1000`, `2000`, `5000`) cannot deliver messages to blacklisted subscribers. Melipayamak resolves this via **Service Lines (خطوط خدماتی اشتراکی)**:
-- Melipayamak's `SendOtp` routes OTP traffic through shared service numbers registered exclusively for verification codes.
+- Melipayamak's `SendOtp` and Console OTP routes traffic through shared service numbers registered exclusively for verification codes.
 - These messages are **exempt from the advertising blacklist** and are guaranteed delivery within seconds.
-- No promotional or marketing text may be included; only the verification code and essential brand identification are transmitted.
 
 ---
 
-## Melipayamak Error Codes Reference
+## Melipayamak Error Codes & Status Reference
+
+### Console Token API Statuses
+
+| Status Message | Description | Resolution |
+| :--- | :--- | :--- |
+| **`عملیات موفق`** | Message successfully accepted and queued for delivery. | Normal operation. |
+| **`مستلزم تنظیم و تأیید مدیر`** | OTP pattern/application requires approval by panel administrator. | Visit [Melipayamak Console](https://console.melipayamak.com/apps/otp) and contact support to approve the OTP template. |
+| **`کلید کنسول معتبر نیست`** | The provided JWT/API Token is invalid or expired. | Verify `MELIPAYAMAK_JWT` in your `.env` configuration. |
+| **`ارسال نشده`** | Transmission could not be completed by carrier. | Verify mobile number or account balance. |
+
+### Legacy Payamak-Panel Return Codes
 
 When calling `https://rest.payamak-panel.com/api/SendSMS/SendOtp`, any numeric return value **<= 111** represents an error:
 
@@ -257,14 +176,8 @@ When calling `https://rest.payamak-panel.com/api/SendSMS/SendOtp`, any numeric r
 | **3** | Daily Limit Exceeded | Account has exceeded its daily transmission quota. |
 | **4** | Volume Limit Exceeded | Account has exceeded its maximum message volume limit. |
 | **5** | Invalid Sender Line | The `from` line is invalid or not registered to this account. |
-| **6** | Maintenance | The SMS gateway system is currently undergoing scheduled maintenance. |
-| **7** | Filtered Content | Message content contains prohibited or filtered words. |
-| **8** | Telco Transmission Failed | Failed to transmit the message to telecommunication operators. |
 | **10** | Invalid Recipient Number | Destination mobile number format is invalid. |
-| **11** | Recipient Blacklisted | Destination number has blocked SMS delivery (not applicable to approved service lines). |
-| **12** | Recipient Unreachable | Telecommunication operator unable to route to recipient. |
-| **35** | Unauthorized Line | The sender line does not belong to the authenticated user. |
-| **> 111** | **Success** | Valid message reference ID (`recId`). SMS accepted for immediate dispatch. |
+| **> 111** | **Success** | Valid message reference ID (`recId`). SMS accepted for dispatch. |
 
 ---
 
@@ -275,24 +188,21 @@ When calling `https://rest.payamak-panel.com/api/SendSMS/SendOtp`, any numeric r
 Add these to your `.env` or deployment environment:
 
 ```env
-# Melipayamak account username
+# Primary: Melipayamak Console Token / JWT
+MELIPAYAMAK_JWT=your_console_token_here
+
+# Optional: Verified test phone number for local test suite
+TEST_PHONE_NUMBER=09012027369
+
+# Legacy Fallback: Only used if MELIPAYAMAK_JWT is omitted
 MELIPAYAMAK_USERNAME=your_username
-
-# Melipayamak account password or API token
-MELIPAYAMAK_CREDENTIAL=your_password_or_token
-
-# Approved service line number (provided by Melipayamak)
+MELIPAYAMAK_CREDENTIAL=your_password
 MELIPAYAMAK_FROM=your_sender_line
 ```
 
-### Local Development & Testing Mock
+### Provider Resolution Precedence
 
-If any of the three Melipayamak environment variables are omitted, the application automatically switches to `ConsoleSmsProvider`.
-
-In this mode:
-- No HTTP requests are made to Melipayamak.
-- The 6-digit code is logged directly to the server terminal:
-  ```
-  [SMS MOCK] Sent OTP code "482019" to phone "09123456789"
-  ```
-- This allows full local end-to-end testing of customer login and registration without consuming SMS credits or requiring active internet connectivity.
+`getSmsProvider()` checks variables in order:
+1. If `MELIPAYAMAK_JWT` is set: uses **`MelipayamakConsoleSmsProvider`**.
+2. Else if `MELIPAYAMAK_USERNAME && MELIPAYAMAK_CREDENTIAL && MELIPAYAMAK_FROM`: uses **`MelipayamakSmsProvider`**.
+3. Otherwise: uses **`ConsoleSmsProvider`** (mock logging to stdout).

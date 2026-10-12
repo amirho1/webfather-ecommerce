@@ -20,7 +20,7 @@ When a module serves one specific task, export its primary function or component
  * @returns The catalog products.
  */
 export default async function fetchCatalogProducts(): Promise<Product[]> {
-  const response = await axios.get<Product[]>("/api/products")
+  const response = await axios.get<Product[]>('/api/products')
 
   return response.data
 }
@@ -37,8 +37,8 @@ export default async function fetchCatalogProducts(): Promise<Product[]> {
  * @returns The localized price string.
  */
 export function formatPrice(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
     currency,
   }).format(amount)
 }
@@ -50,7 +50,7 @@ export function formatPrice(amount: number, currency: string) {
  * @returns The localized date string.
  */
 export function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US").format(new Date(value))
+  return new Intl.DateTimeFormat('en-US').format(new Date(value))
 }
 ```
 
@@ -62,13 +62,13 @@ Use `SCREAMING_SNAKE_CASE` only for constant values that never change.
 ### Example
 
 ```typescript
-const userName = "John Doe"
+const userName = 'John Doe'
 ```
 
 ### Do not
 
 ```typescript
-const USER_NAME = "John Doe"
+const USER_NAME = 'John Doe'
 ```
 
 ## React Component Examples
@@ -84,13 +84,7 @@ const USER_NAME = "John Doe"
  * </Button>
  * ```
  */
-export default function Button({
-  className,
-  variant,
-  size,
-  loading,
-  ...props
-}: ButtonProps) {
+export default function Button({ className, variant, size, loading, ...props }: ButtonProps) {
   return (
     <button
       data-slot="button"
@@ -119,8 +113,8 @@ parameters, and return value when that information is not obvious from the type.
  * @returns The localized price string.
  */
 export function formatPrice(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
     currency,
   }).format(amount)
 }
@@ -130,8 +124,8 @@ export function formatPrice(amount: number, currency: string) {
 
 ```typescript
 export function formatPrice(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
     currency,
   }).format(amount)
 }
@@ -197,7 +191,7 @@ Separate API access, validation, state queries, and presentation.
  * @returns The catalog products.
  */
 export async function fetchProducts(): Promise<Product[]> {
-  const response = await axios.get<Product[]>("/api/products")
+  const response = await axios.get<Product[]>('/api/products')
 
   return response.data
 }
@@ -223,7 +217,7 @@ export const productSchema = z.object({
  */
 export function useProducts() {
   return useQuery({
-    queryKey: ["products"],
+    queryKey: ['products'],
     queryFn: fetchProducts,
   })
 }
@@ -269,7 +263,7 @@ export function ProductList() {
 
   useEffect(() => {
     async function loadProducts() {
-      const response = await axios.get("/api/products")
+      const response = await axios.get('/api/products')
       const parsedProducts = z.array(productSchema).parse(response.data)
 
       setProducts(parsedProducts)
@@ -278,7 +272,13 @@ export function ProductList() {
     void loadProducts()
   }, [])
 
-  return <>{products.map((product) => <ProductCard key={product.id} product={product} />)}</>
+  return (
+    <>
+      {products.map((product) => (
+        <ProductCard key={product.id} product={product} />
+      ))}
+    </>
+  )
 }
 ```
 
@@ -322,15 +322,8 @@ export function ProductPrice({ price, currency }: PriceDisplayProps) {
  * @param props - The discounted price to display.
  * @returns The discounted price element.
  */
-export function DiscountedProductPrice({
-  price,
-  currency,
-}: PriceDisplayProps) {
-  return (
-    <span className="text-destructive">
-      {formatPrice(price, currency)}
-    </span>
-  )
+export function DiscountedProductPrice({ price, currency }: PriceDisplayProps) {
+  return <span className="text-destructive">{formatPrice(price, currency)}</span>
 }
 ```
 
@@ -342,23 +335,19 @@ Do not keep adding unrelated display modes to one large component.
 type ProductPriceProps = {
   price: number
   currency: string
-  displayMode: "regular" | "discounted" | "member" | "wholesale"
+  displayMode: 'regular' | 'discounted' | 'member' | 'wholesale'
 }
 
 /**
  * Renders every product-price variation in one component.
  * This becomes harder to extend as pricing rules grow.
  */
-export function ProductPrice({
-  price,
-  currency,
-  displayMode,
-}: ProductPriceProps) {
-  if (displayMode === "discounted") {
+export function ProductPrice({ price, currency, displayMode }: ProductPriceProps) {
+  if (displayMode === 'discounted') {
     return <span className="text-destructive">{formatPrice(price, currency)}</span>
   }
 
-  if (displayMode === "member") {
+  if (displayMode === 'member') {
     return <span className="text-primary">{formatPrice(price, currency)}</span>
   }
 
@@ -391,7 +380,9 @@ export type ProductCollectionProps = {
 export function ProductGrid({ products }: ProductCollectionProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      {products.map((product) => <ProductCard key={product.id} product={product} />)}
+      {products.map((product) => (
+        <ProductCard key={product.id} product={product} />
+      ))}
     </div>
   )
 }
@@ -407,7 +398,9 @@ export function ProductGrid({ products }: ProductCollectionProps) {
 export function ProductRows({ products }: ProductCollectionProps) {
   return (
     <div className="space-y-2">
-      {products.map((product) => <ProductRow key={product.id} product={product} />)}
+      {products.map((product) => (
+        <ProductRow key={product.id} product={product} />
+      ))}
     </div>
   )
 }
@@ -525,7 +518,7 @@ type ProductsQueryDependencies = {
  */
 export function useProductsQuery({ getProducts }: ProductsQueryDependencies) {
   return useQuery({
-    queryKey: ["products"],
+    queryKey: ['products'],
     queryFn: getProducts,
   })
 }
@@ -542,9 +535,9 @@ Do not couple a reusable component directly to Axios and an endpoint.
  */
 export function ProductList() {
   const productsQuery = useQuery({
-    queryKey: ["products"],
+    queryKey: ['products'],
     queryFn: async () => {
-      const response = await axios.get<Product[]>("/api/products")
+      const response = await axios.get<Product[]>('/api/products')
 
       return response.data
     },
@@ -637,12 +630,9 @@ Do not combine page rendering, data loading, calculations, and mutation logic in
  * This component is too large to maintain safely.
  */
 export default function ProductsPage() {
-  const productsQuery = useQuery({ queryKey: ["products"], queryFn: fetchProducts })
+  const productsQuery = useQuery({ queryKey: ['products'], queryFn: fetchProducts })
   const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const cartTotal = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0,
-  )
+  const cartTotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
 
   return <CatalogWithCart products={productsQuery.data ?? []} total={cartTotal} />
 }
@@ -670,10 +660,7 @@ AI should write small functions with clear names. A function should usually:
  * @param requestedQuantity - The quantity a user wants to add.
  * @returns Whether the requested quantity is available.
  */
-export function hasAvailableStock(
-  availableQuantity: number,
-  requestedQuantity: number,
-) {
+export function hasAvailableStock(availableQuantity: number, requestedQuantity: number) {
   return requestedQuantity > 0 && requestedQuantity <= availableQuantity
 }
 ```
@@ -763,7 +750,7 @@ AI must not scatter Axios calls across components and hooks. Keep HTTP requests 
  * @returns The catalog products.
  */
 export async function fetchProducts(): Promise<Product[]> {
-  const response = await axios.get<Product[]>("/api/products")
+  const response = await axios.get<Product[]>('/api/products')
 
   return response.data
 }
@@ -778,8 +765,8 @@ export async function fetchProducts(): Promise<Product[]> {
  */
 export function ProductList() {
   const productsQuery = useQuery({
-    queryKey: ["products"],
-    queryFn: () => axios.get<Product[]>("/api/products"),
+    queryKey: ['products'],
+    queryFn: () => axios.get<Product[]>('/api/products'),
   })
 
   return <ProductListContent products={productsQuery.data?.data ?? []} />

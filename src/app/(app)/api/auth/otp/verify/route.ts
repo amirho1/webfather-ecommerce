@@ -1,30 +1,36 @@
 import {
-    createMobileSession,
-    isIranianMobile,
-    mobileCookieName,
-    mobileCookieOptions,
-    normalizeDigits,
-    normalizePhone,
-} from '@/lib/auth/mobileSession';
-import { verifyPendingOtp } from '@/lib/auth/otpService';
-import { findOrCreateVerifiedMobileUser } from '@/lib/auth/userService';
-import config from '@payload-config';
-import { NextResponse, type NextRequest } from 'next/server';
-import { getPayload } from 'payload';
+  createMobileSession,
+  isIranianMobile,
+  mobileCookieName,
+  mobileCookieOptions,
+  normalizeDigits,
+  normalizePhone,
+} from '@/lib/auth/mobileSession'
+import { verifyPendingOtp } from '@/lib/auth/otpService'
+import { findOrCreateVerifiedMobileUser } from '@/lib/auth/userService'
+import config from '@payload-config'
+import { NextResponse, type NextRequest } from 'next/server'
+import { getPayload } from 'payload'
 
 export const runtime = 'nodejs'
 
+/**
+ * Handles OTP verification submissions, activates customer accounts, and sets session cookies.
+ *
+ * @param request - Incoming Next.js HTTP request containing phone number and OTP code.
+ * @returns JSON response with verified user payload or error details.
+ */
 export async function POST(request: NextRequest) {
   const data = await request.json().catch(() => null)
   const phone = normalizePhone(typeof data?.phoneNumber === 'string' ? data.phoneNumber : '')
   const code = normalizeDigits(typeof data?.code === 'string' ? data.code : '')
 
-  if (!isIranianMobile(phone) || !/^[0-9]{6}$/.test(code)) {
+  if (!isIranianMobile(phone) || !/^[0-9]{4,8}$/.test(code)) {
     return NextResponse.json({ error: 'کد معتبر نیست.' }, { status: 400 })
   }
 
   // 1. Verify OTP against independent pending registry
-  const verification = verifyPendingOtp(phone, code)
+  const verification = await verifyPendingOtp(phone, code)
   if (!verification.valid) {
     return NextResponse.json(
       { error: verification.error || 'کد نامعتبر یا منقضی شده است.' },

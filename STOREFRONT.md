@@ -31,6 +31,7 @@ Set the following server environment variables for live SMS delivery:
 The app generates a 6-character (6-digit) OTP code and calls Melipayamak `SendOtp` from the server. Codes are stored as HMAC-SHA256 hashes in an in-memory pending registry (preventing ghost users in the database), expire after five minutes, and can be verified once. Requests have a one-minute resend cooldown and hourly phone/IP limits; verification permits five attempts per code. Verified sessions use HTTP-only cookies and are revoked on logout. Admin email/password access remains available through `/admin`; public user creation is disabled.
 
 For comprehensive architectural details and provider specs, see:
+
 - [docs/OTP_SERVICE.md](./docs/OTP_SERVICE.md) — Architecture, security, endpoints, and 6-digit code specifications.
 - [docs/melipayamak.md](./docs/melipayamak.md) — Melipayamak SMS provider integration guide and error codes.
 

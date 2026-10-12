@@ -80,7 +80,11 @@ export const SeedButton: React.FC = () => {
 
   return (
     <Fragment>
-      <button className="seedButton" dir={i18n.language === 'fa' ? 'rtl' : 'ltr'} onClick={handleClick}>
+      <button
+        className="seedButton"
+        dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
+        onClick={handleClick}
+      >
         {copy.seedButton}
       </button>
       {message}

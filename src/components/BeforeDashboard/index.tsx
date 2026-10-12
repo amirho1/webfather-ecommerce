@@ -29,22 +29,38 @@ export const BeforeDashboard: React.FC = () => {
         </li>
         <li>
           {copy.modifyIntro}
-          <a href="https://payloadcms.com/docs/configuration/collections" rel="noopener noreferrer" target="_blank">
+          <a
+            href="https://payloadcms.com/docs/configuration/collections"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
             {copy.collections}
           </a>
           {copy.andAdd}
-          <a href="https://payloadcms.com/docs/fields/overview" rel="noopener noreferrer" target="_blank">
+          <a
+            href="https://payloadcms.com/docs/fields/overview"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
             {copy.fields}
           </a>
           {copy.asNeeded}
-          <a href="https://payloadcms.com/docs/getting-started/what-is-payload" rel="noopener noreferrer" target="_blank">
+          <a
+            href="https://payloadcms.com/docs/getting-started/what-is-payload"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
             {copy.gettingStarted}
           </a>
           {copy.docs}
         </li>
       </ul>
       {copy.proTip}
-      <a href="https://payloadcms.com/docs/admin/components#base-component-overrides" rel="noopener noreferrer" target="_blank">
+      <a
+        href="https://payloadcms.com/docs/admin/components#base-component-overrides"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
         {copy.customComponent}
       </a>
       {copy.removeAnytime}

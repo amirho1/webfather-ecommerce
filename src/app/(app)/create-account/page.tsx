@@ -1,4 +1,4 @@
-import { AuthPageWrapper } from '@/components/auth/AuthPageWrapper';
+import { AuthPageWrapper } from '@/components/auth/AuthPageWrapper'
 
 export const metadata = { title: 'ساخت حساب | مفت خر' }
 

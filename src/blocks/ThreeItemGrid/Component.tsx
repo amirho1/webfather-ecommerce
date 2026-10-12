@@ -1,10 +1,10 @@
-import type { Media, Product, ThreeItemGridBlock as ThreeItemGridBlockProps } from '@/payload-types';
+import type { Media, Product, ThreeItemGridBlock as ThreeItemGridBlockProps } from '@/payload-types'
 
-import { GridTileImage } from '@/components/Grid/tile';
-import { getCardPrice } from '@/lib/formatToman';
-import Link from 'next/link';
-import type { DefaultDocumentIDType } from 'payload';
-import React from 'react';
+import { GridTileImage } from '@/components/Grid/tile'
+import { getCardPrice } from '@/lib/formatToman'
+import Link from 'next/link'
+import type { DefaultDocumentIDType } from 'payload'
+import React from 'react'
 
 type Props = { item: Product; priority?: boolean; size: 'full' | 'half' }
 

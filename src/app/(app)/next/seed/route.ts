@@ -1,9 +1,9 @@
-import { seed } from '@/endpoints/seed';
-import config from '@payload-config';
-import { headers } from 'next/headers';
-import { createLocalReq, getPayload } from 'payload';
+import { seed } from '@/endpoints/seed'
+import config from '@payload-config'
+import { headers } from 'next/headers'
+import { createLocalReq, getPayload } from 'payload'
 
-import { checkRole } from '@/access/utilities';
+import { checkRole } from '@/access/utilities'
 
 export const maxDuration = 300 // This function can run for a maximum of 300 seconds
 

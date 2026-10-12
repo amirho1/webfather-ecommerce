@@ -1,8 +1,8 @@
-import { Media } from '@/components/Media';
-import { Price } from '@/components/Price';
-import { getPrice } from '@/lib/formatToman';
-import { Product, Variant } from '@/payload-types';
-import Link from 'next/link';
+import { Media } from '@/components/Media'
+import { Price } from '@/components/Price'
+import { getPrice } from '@/lib/formatToman'
+import { Product, Variant } from '@/payload-types'
+import Link from 'next/link'
 
 type Props = {
   product: Product

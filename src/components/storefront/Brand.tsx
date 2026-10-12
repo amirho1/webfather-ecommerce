@@ -1,6 +1,6 @@
-import type { Media } from '@/payload-types';
-import Image from 'next/image';
-import Link from 'next/link';
+import type { Media } from '@/payload-types'
+import Image from 'next/image'
+import Link from 'next/link'
 
 export function Brand({ footer = false }: { footer?: boolean }) {
   return (

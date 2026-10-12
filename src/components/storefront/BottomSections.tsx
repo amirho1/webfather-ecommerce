@@ -1,6 +1,6 @@
-import { ArrowLeft, Asterisk, Headphones, Layers, MousePointer2, Plus, Wallet } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
+import { ArrowLeft, Asterisk, Headphones, Layers, MousePointer2, Plus, Wallet } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
 
 const benefits = [
   {

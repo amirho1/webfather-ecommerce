@@ -68,18 +68,23 @@ Configure these environment variables in your deployment environment:
 | `PREVIEW_SECRET` | **Yes** | Secret used to authenticate draft preview requests from Payload Admin. | `openssl rand -base64 32` |
 | `PAYLOAD_PUBLIC_SERVER_URL` | **Yes** | Fully qualified public HTTPS URL of your site (no trailing slash). | `https://moftkhar.com` |
 | `NEXT_PUBLIC_SERVER_URL` | **Yes** | Must match `PAYLOAD_PUBLIC_SERVER_URL`. Embedded into client build bundles. | `https://moftkhar.com` |
-| `MELIPAYAMAK_USERNAME` | Production | Username for the Melipayamak SMS gateway. | `your_panel_username` |
-| `MELIPAYAMAK_CREDENTIAL` | Production | Password or API key for Melipayamak. | `your_secret_credential` |
-| `MELIPAYAMAK_FROM` | Production | Dedicated sender line number approved in your panel. | `5000...` |
+| `MELIPAYAMAK_JWT` | Production | Modern Console Token / JWT for Melipayamak REST OTP delivery (preferred). | `your_console_token` |
+| `MELIPAYAMAK_USERNAME` | Legacy | Legacy panel username for Melipayamak (fallback if JWT not set). | `your_panel_username` |
+| `MELIPAYAMAK_CREDENTIAL` | Legacy | Password or API key for Melipayamak legacy panel. | `your_secret_credential` |
+| `MELIPAYAMAK_FROM` | Legacy | Dedicated sender line number approved in your panel. | `5000...` |
+| `REDIS_URL` | Local development | Redis connection for OTP storage. Compose sets this automatically to `redis://redis:6379`. | `redis://localhost:6379` |
 | `COMPANY_NAME` | No | Company brand name used in metadata and footers (default: `مفت خر`). | `"مفت خر"` |
 | `SITE_NAME` | No | Site title displayed in headers and browser tabs (default: `مفت خر`). | `"مفت خر"` |
 | `SQLITE_VOLUME_NAME` | No | Custom Docker volume name for the database (default: `webfather_sqlite_data`). | `webfather_sqlite_data` |
 | `MEDIA_VOLUME_NAME` | No | Custom Docker volume name for uploaded files (default: `webfather_media_data`). | `webfather_media_data` |
+| `REDIS_VOLUME_NAME` | No | Custom Docker volume name for Redis append-only data (default: `webfather_redis_data`). | `webfather_redis_data` |
 | `DOCKER_PROXY_NETWORK` | No | Docker network connecting the app to the reverse proxy (default: `dokploy-network`). | `dokploy-network` |
 | `DOCKER_PROXY_NETWORK_EXTERNAL` | No | Set to `false` if running Compose locally without an external proxy network. | `true` |
 
 > [!NOTE]
 > `DATABASE_URL` is configured automatically inside `docker-compose.yml` to point to `file:/app/data/webfather-ecommerce.db`. Do not override it in your production `.env` unless you are intentionally changing the internal container path.
+
+Compose starts an internal Redis service and sets `REDIS_URL` for the app. For local development outside Compose, start Redis and set `REDIS_URL` in `.env`.
 
 ### Generating Secure Secrets
 Run the following commands on your local machine or server to generate random secrets:

@@ -1,12 +1,12 @@
-import type { Product } from '@/payload-types';
+import type { Product } from '@/payload-types'
 
-import { Media } from '@/components/Media';
-import { Price } from '@/components/Price';
-import clsx from 'clsx';
-import Link from 'next/link';
-import React from 'react';
+import { Media } from '@/components/Media'
+import { Price } from '@/components/Price'
+import clsx from 'clsx'
+import Link from 'next/link'
+import React from 'react'
 
-import { getCardPrice } from '@/lib/formatToman';
+import { getCardPrice } from '@/lib/formatToman'
 
 type Props = {
   product: Partial<Product>

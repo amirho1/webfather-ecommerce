@@ -1,5 +1,5 @@
-export { BottomSections } from './BottomSections';
-export { BrandStrip } from './BrandStrip';
-export { CategoryCards } from './CategoryCards';
-export { Featured } from './Featured';
-export { Hero } from './Hero';
+export { BottomSections } from './BottomSections'
+export { BrandStrip } from './BrandStrip'
+export { CategoryCards } from './CategoryCards'
+export { Featured } from './Featured'
+export { Hero } from './Hero'

@@ -1,1 +1,3 @@
-export default function AccountLayout({ children }: { children: React.ReactNode }) { return <div className="container account-layout">{children}</div> }
+export default function AccountLayout({ children }: { children: React.ReactNode }) {
+  return <div className="container account-layout">{children}</div>
+}
