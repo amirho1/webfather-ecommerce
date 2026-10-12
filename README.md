@@ -1,6 +1,6 @@
 # Moftkhar
 
-The current release is a Persian RTL storefront backed by Payload. It supports browsing, mobile OTP accounts, and persistent carts. Ordering and payment are unavailable. See [STOREFRONT.md](./STOREFRONT.md) for setup, migration, draft import, and SMS configuration.
+The current release is a Persian RTL storefront backed by Payload. It supports browsing, mobile OTP accounts, and persistent carts. Ordering and payment are unavailable. See [STOREFRONT.md](./STOREFRONT.md) for setup and catalog seeding, [docs/OTP_SERVICE.md](./docs/OTP_SERVICE.md) for mobile OTP authentication architecture, and [docs/melipayamak.md](./docs/melipayamak.md) for SMS gateway configuration.
 
 The template notes below describe the original Payload starter and include features that are disabled in this release.
 
@@ -375,12 +375,16 @@ export default buildConfig({
 
 ### Self-hosting
 
-Before deploying your app, you need to:
+For self-hosting on a VPS with Dokploy or Docker Compose, see the complete guide in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Additional guides are available in:
+- [docs/OTP_SERVICE.md](docs/OTP_SERVICE.md) — Mobile OTP authentication architecture and security specification
+- [docs/melipayamak.md](docs/melipayamak.md) — Melipayamak SMS gateway integration and error code reference
 
-1. Ensure your app builds and serves in production. See [Production](#production) for more details.
-2. You can then deploy Payload as you would any other Node.js or Next.js application either directly on a VPS, DigitalOcean's Apps Platform, via Coolify or more. More guides coming soon.
-
-You can also deploy your app manually, check out the [deployment documentation](https://payloadcms.com/docs/production/deployment) for full details.
+It covers:
+- Dokploy Git-backed Compose setup with automatic SSL/TLS
+- Persistent volume management for SQLite and media uploads
+- Server environment variables and Melipayamak SMS OTP configuration
+- Automated startup migrations and catalog seeding
+- Backup strategies for SQLite WAL consistency and disaster recovery
 
 ## Questions
 
